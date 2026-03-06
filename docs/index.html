@@ -295,23 +295,19 @@
             </div>
             <div>
               <span class="label">Vedúci práce</span>
-              <div>
-                <!-- DOPLŇ -->
-                Meno školiteľa
-              </div>
+              <div>doc. Mgr. Tomáš Vinař, PhD.</div>
             </div>
             <div>
               <span class="label">Kontakt</span>
               <div>
-                <a href="mailto:student@example.com">student@example.com</a>
+                <a href="mailto:petkotimotej@gmail.com"
+                  >petkotimotej@gmail.com</a
+                >
               </div>
             </div>
             <div style="grid-column: 1 / -1">
               <span class="label">Fakulta / škola</span>
-              <div>
-                <!-- DOPLŇ -->
-                Fakulta matematiky, fyziky a informatiky UK
-              </div>
+              <div>Fakulta matematiky, fyziky a informatiky UK</div>
             </div>
           </div>
         </aside>
@@ -323,7 +319,6 @@
         <a href="#o-praci">O práci</a>
         <a href="#zadanie">Zadanie</a>
         <a href="#zdroje">Zdroje</a>
-        <a href="#vystupy">Výstupy</a>
         <a href="#dennik">Denník</a>
         <a href="#kontakt">Kontakt</a>
       </div>
@@ -348,29 +343,13 @@
         </p>
       </section>
 
-      <section id="zadanie" class="two-col">
-        <div class="card">
-          <h2>Zadanie – anotácia</h2>
-          <p>
-            <strong>Sem vlož anotáciu zo zadania v AISe.</strong>
-          </p>
-          <p class="muted">
-            Príklad: Práca sa zaoberá analýzou časového priebehu tempa v
-            hudobnom zázname a metódami zarovnania symbolickej reprezentácie
-            skladby s jej zvukovou realizáciou.
-          </p>
-        </div>
-
-        <div class="card">
-          <h2>Zadanie – cieľ práce</h2>
-          <p>
-            <strong>Sem vlož presné znenie cieľa práce z AISe.</strong>
-          </p>
-          <p class="muted">
-            Odporúčanie: ponechaj oficiálne znenie bez úprav a pod to môžeš
-            doplniť vlastné vysvetlenie implementačného plánu.
-          </p>
-        </div>
+      <section id="zadanie" class="card">
+        <h2>Zadanie – anotácia</h2>
+        <p>
+          Práca preskúma možnosti automatizovaného alebo čiastočne
+          automatizovaného vytvárania tempomáp hudobných záznamov tak, aby
+          hudobný záznam bolo možné zosúladiť s notovým materiálom.
+        </p>
       </section>
 
       <section class="card">
@@ -406,6 +385,11 @@
               <td>
                 Plánované porovnanie jednoduchého baseline s vylepšeniami.
               </td>
+            </tr>
+            <tr>
+              <td>Písanie práce</td>
+              <td>Rozpracované</td>
+              <td>Písanie teoretickej časti.</td>
             </tr>
           </tbody>
         </table>
@@ -484,99 +468,28 @@
         </ul>
       </section>
 
-      <section id="vystupy" class="card">
-        <h2>Už napísané texty, screenshoty a zdrojové kódy</h2>
-        <div class="output-grid">
-          <div class="output-box">
-            <h3>Texty</h3>
-            <ul class="outputs">
-              <li>
-                <a href="#">Úvod</a>
-                <span class="muted">(doplň odkaz na PDF/DOCX)</span>
-              </li>
-              <li>
-                <a href="#">Metodológia</a>
-                <span class="muted">(doplň odkaz)</span>
-              </li>
-              <li>
-                <a href="#">Návrh baseline pipeline</a>
-                <span class="muted">(doplň odkaz)</span>
-              </li>
-            </ul>
-          </div>
-          <div class="output-box">
-            <h3>Screenshoty</h3>
-            <ul class="outputs">
-              <li><a href="#">Chroma z audia</a></li>
-              <li><a href="#">Chroma zo score</a></li>
-              <li><a href="#">Warpping path / DTW graf</a></li>
-              <li><a href="#">Tempomapa</a></li>
-            </ul>
-          </div>
-          <div class="output-box">
-            <h3>Zdrojové kódy</h3>
-            <ul class="outputs">
-              <li><a href="#">Notebook / baseline implementácia</a></li>
-              <li><a href="#">Skript na extrakciu chroma príznakov</a></li>
-              <li><a href="#">Skript na výpočet DTW a vizualizáciu</a></li>
-            </ul>
-          </div>
-          <div class="output-box">
-            <h3>Poznámky</h3>
-            <p class="placeholder">
-              Odkazy môžu smerovať na GitHub, Google Drive, PDF súbory, obrázky
-              alebo lokálne exporty, ktoré neskôr nahráš na web.
-            </p>
-          </div>
-        </div>
-      </section>
-
       <section id="dennik" class="card">
         <h2>Denník práce</h2>
         <p class="muted">
-          Táto sekcia má byť aktualizovaná každý týždeň. Každý záznam by mal
-          stručne obsahovať, čo bolo urobené, aký bol výsledok a čo je ďalší
-          krok.
+          Táto sekcia slúži na zaznamenávanie týždenného progresu pri tvorbe
+          práce.
         </p>
 
         <h3>Týždeň 1</h3>
         <ul class="journal">
-          <li>
-            Spresnenie témy bakalárskej práce a definovanie cieľa implementácie.
-          </li>
-          <li>
-            Zhromaždenie základnej literatúry k score-performance alignment a
-            tempomape.
-          </li>
-          <li>
-            Príprava formátov vstupných dát: audio (.wav, .mp3), score
-            (.musicxml, .mid).
-          </li>
+          <li>Tvorba webstránky</li>
+          <li>Príprava prezentácie o pláne a postupe práce</li>
+          <li>Štúdium článkov</li>
         </ul>
 
         <h3>Týždeň 2</h3>
         <ul class="journal">
-          <li>Návrh jednoduchej baseline pipeline.</li>
-          <li>Rozhodnutie začať s chroma reprezentáciou pre audio aj score.</li>
-          <li>
-            Štúdium knižníc Partitura, librosa a možností spracovania
-            MusicXML/MIDI.
-          </li>
+          <li>Ujasnenie si štruktúry kapitol so školiteľom</li>
+          <li>Implementácia baseline pipeliny</li>
         </ul>
 
-        <h3>Týždeň 3</h3>
-        <ul class="journal">
-          <li>Implementácia prvých častí pipeline a príprava vizualizácií.</li>
-          <li>
-            Testovanie zarovnania pomocou DTW a interpretácia warping path.
-          </li>
-          <li>Príprava podkladov pre odvodenie tempomapy zo zarovnania.</li>
-        </ul>
-
-        <p class="placeholder">
-          Ďalšie týždne už len kopíruj podľa rovnakého vzoru. Ideálne uvádzaj aj
-          dátumy, napr. <code>3. 3. 2026 – 9. 3. 2026</code>.
-        </p>
+        <h3>Týždeň 3 - in progress</h3>
+        <ul class="journal"></ul>
       </section>
 
       <section id="kontakt" class="card">
@@ -584,10 +497,10 @@
         <p>
           <strong>Študent:</strong> Timotej Peťko<br />
           <strong>E-mail:</strong>
-          <a href="mailto:student@example.com">student@example.com</a><br />
+          <a href="mailto:petkotimotej@gmail.com">petkotimotej@gmail.com</a
+          ><br />
           <strong>Vedúci práce:</strong>
-          <!-- DOPLŇ -->
-          Meno školiteľa
+          doc. Mgr. Tomáš Vinař, PhD.
         </p>
       </section>
     </main>
@@ -595,7 +508,7 @@
     <footer>
       <div class="container">
         Webová stránka k bakalárskej práci. Posledná aktualizácia:
-        <strong>marec 2026</strong>.
+        <strong>6.3.2026</strong>.
       </div>
     </footer>
   </body>

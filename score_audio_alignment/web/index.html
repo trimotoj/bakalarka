@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Score Sync Demo</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Synchronizácia partitúry s nahrávkou</h1>
+
+    <div class="controls">
+      <button id="loadBtn">Načítať partitúru</button>
+      <button id="playBtn">Play</button>
+      <button id="pauseBtn">Pause</button>
+    </div>
+
+    <div class="status">
+      <p><strong>Audio time:</strong> <span id="audioTime">0.00</span> s</p>
+      <p><strong>Score time:</strong> <span id="scoreTime">0.00</span> beats</p>
+    </div>
+
+    <audio id="audio" controls>
+      <source src="chopin.wav" type="audio/wav" />
+      Tvoj prehliadač nepodporuje audio element.
+    </audio>
+
+    <div id="score"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdisplay.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

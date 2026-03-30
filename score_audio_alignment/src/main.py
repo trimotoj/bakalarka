@@ -1,7 +1,4 @@
-import json
 from pathlib import Path
-
-import numpy as np
 
 from src.audio_features import (
     audio_to_chroma,
@@ -10,7 +7,13 @@ from src.audio_features import (
 )
 from src.cost_matrix import cosine_cost_matrix
 from src.dtw_alignment import dtw
-from src.io_utils import load_audio, load_score, save_path_csv, save_tempomap_csv
+from src.io_utils import (
+    load_audio,
+    load_score,
+    save_path_csv,
+    save_score_beats_json,
+    save_tempomap_csv,
+)
 from src.score_features import (
     build_score_time_grid,
     note_array_to_chroma,
@@ -30,8 +33,8 @@ from src.visualization import (
 )
 
 
-SCORE_PATH = Path("data/score/chopin.musicxml")
-AUDIO_PATH = Path("data/audio/chopin.wav")
+SCORE_PATH = Path("data/score/aka-si-mi-krasna.musicxml")
+AUDIO_PATH = Path("data/audio/aka-si-mi-krasna.wav")
 OUTPUT_DIR = Path("data/output")
 PLOTS_DIR = OUTPUT_DIR / "plots"
 
@@ -42,60 +45,15 @@ SMOOTH_WINDOW = 9
 SHOW_PLOTS = True
 
 
-def export_score_beats_json(score_path: str | Path, out_path: str | Path) -> None:
-    score = load_score(score_path)
-    note_array = score_to_note_array(score)
-    unique_onsets = np.unique(note_array["onset_beat"].astype(float))
-
-    data = []
-    for onset in unique_onsets:
-        data.append({"score_time": float(onset)})
-
-    out_path = Path(out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def main() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
-
-    score = load_score(SCORE_PATH)
-    note_array = score_to_note_array(score)
-
-    audio, sr = load_audio(AUDIO_PATH, sr=AUDIO_SR)
-    audio, start_sample = trim_leading_silence(audio, top_db=30)
-    start_time = start_sample / sr
-
-    score_times = build_score_time_grid(note_array, fps=SCORE_FPS)
-    score_chroma = note_array_to_chroma(note_array, score_times)
-
-    audio_chroma = audio_to_chroma(audio, sr, hop_length=AUDIO_HOP_LENGTH)
-    audio_times = (
-        get_audio_frame_times(len(audio_chroma), sr, AUDIO_HOP_LENGTH) + start_time
-    )
-
-    cost = cosine_cost_matrix(score_chroma, audio_chroma)
-    acc, path = dtw(cost)
-
-    tempomap = make_tempomap(path, score_times, audio_times)
-    tempomap = remove_duplicate_points(tempomap)
-    tempomap = smooth_tempomap(tempomap, window=SMOOTH_WINDOW)
-
-    save_tempomap_csv(OUTPUT_DIR / "tempomap.csv", tempomap)
-    save_path_csv(OUTPUT_DIR / "path.csv", path)
-    export_tempomap_json(tempomap, OUTPUT_DIR / "tempomap.json")
-    export_score_beats_json(SCORE_PATH, OUTPUT_DIR / "score_beats.json")
-
-    print(f"trim start: {start_time:.6f} s")
-    print("score_chroma:", score_chroma.shape)
-    print("audio_chroma:", audio_chroma.shape)
-    print("cost:", cost.shape)
-    print("acc:", acc.shape)
-    print("path:", path.shape)
-    print("tempomap:", tempomap.shape)
-
+def save_plots(
+    score_chroma,
+    audio_chroma,
+    score_times,
+    audio_times,
+    cost,
+    path,
+    tempomap,
+) -> None:
     plot_chroma(
         score_chroma,
         score_times,
@@ -130,6 +88,55 @@ def main() -> None:
         tempomap,
         save_path=PLOTS_DIR / "tempomap.png",
         show=SHOW_PLOTS,
+    )
+
+
+def main() -> None:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    score = load_score(SCORE_PATH)
+    note_array = score_to_note_array(score)
+
+    audio, sr = load_audio(AUDIO_PATH, sr=AUDIO_SR)
+    audio, start_sample = trim_leading_silence(audio, top_db=30)
+    start_time = start_sample / sr
+
+    score_times = build_score_time_grid(note_array, fps=SCORE_FPS)
+    score_chroma = note_array_to_chroma(note_array, score_times)
+
+    audio_chroma = audio_to_chroma(audio, sr, hop_length=AUDIO_HOP_LENGTH)
+    audio_times = (
+        get_audio_frame_times(len(audio_chroma), sr, AUDIO_HOP_LENGTH) + start_time
+    )
+
+    cost = cosine_cost_matrix(score_chroma, audio_chroma)
+    path = dtw(cost)
+
+    tempomap = make_tempomap(path, score_times, audio_times)
+    tempomap = remove_duplicate_points(tempomap)
+    tempomap = smooth_tempomap(tempomap, window=SMOOTH_WINDOW)
+
+    save_tempomap_csv(OUTPUT_DIR / "tempomap.csv", tempomap)
+    save_path_csv(OUTPUT_DIR / "path.csv", path)
+    export_tempomap_json(tempomap, OUTPUT_DIR / "tempomap.json")
+    save_score_beats_json(OUTPUT_DIR / "score_beats.json", note_array)
+
+    print(f"trim start: {start_time:.6f} s")
+    print("score_chroma:", score_chroma.shape)
+    print("audio_chroma:", audio_chroma.shape)
+    print("cost:", cost.shape)
+    print("path:", path.shape)
+    print("tempomap:", tempomap.shape)
+
+    save_plots(
+        score_chroma,
+        audio_chroma,
+        score_times,
+        audio_times,
+        cost,
+        path,
+        tempomap,
     )
 
 

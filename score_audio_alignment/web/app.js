@@ -62,7 +62,7 @@ async function loadScore() {
     });
   }
 
-  await osmd.load("chopin.musicxml");
+  await osmd.load("aka-si-mi-krasna.musicxml");
   osmd.render();
 
   osmd.cursor.show();

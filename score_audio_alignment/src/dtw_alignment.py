@@ -4,7 +4,7 @@ import numpy as np
 DTW_STEPS = [(-1, -1), (-1, 0), (0, -1)]
 
 
-def dtw(cost: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def dtw(cost: np.ndarray) -> np.ndarray:
     if cost.ndim != 2:
         raise ValueError("cost must be 2D")
     if cost.shape[0] == 0 or cost.shape[1] == 0:
@@ -24,13 +24,11 @@ def dtw(cost: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
                 pi = i + di
                 pj = j + dj
                 if pi >= 0 and pj >= 0:
-                    if acc[pi, pj] < best_prev:
-                        best_prev = acc[pi, pj]
+                    best_prev = min(best_prev, acc[pi, pj])
 
             acc[i, j] = float(cost[i, j]) + best_prev
 
-    path = backtrack_path(acc)
-    return acc, path
+    return backtrack_path(acc)
 
 
 def backtrack_path(acc: np.ndarray) -> np.ndarray:
@@ -48,7 +46,7 @@ def backtrack_path(acc: np.ndarray) -> np.ndarray:
         if j > 0:
             options.append((acc[i, j - 1], i, j - 1))
 
-        _, i, j = min(options, key=lambda x: x[0])
+        _, i, j = min(options, key=lambda item: item[0])
         path.append((i, j))
 
     path.reverse()

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import librosa
@@ -37,3 +38,14 @@ def save_path_csv(path: str | Path, path_points: np.ndarray) -> None:
         comments="",
         fmt="%d",
     )
+
+
+def save_score_beats_json(path: str | Path, note_array: np.ndarray) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    unique_onsets = np.unique(note_array["onset_beat"].astype(float))
+    data = [{"score_time": float(onset)} for onset in unique_onsets]
+
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, ensure_ascii=False, indent=2)

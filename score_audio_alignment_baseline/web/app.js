@@ -2,25 +2,68 @@ const audio = document.getElementById("audio");
 const loadBtn = document.getElementById("loadBtn");
 const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
+const songSelect = document.getElementById("songSelect");
+const currentSongEl = document.getElementById("currentSong");
 const audioTimeEl = document.getElementById("audioTime");
 const scoreTimeEl = document.getElementById("scoreTime");
 const scoreContainer = document.getElementById("score");
 
+const SONGS = {
+  "aka-si-mi-krasna": {
+    label: "Aká si mi krásna",
+    audio: "data/audio/aka-si-mi-krasna.wav",
+    score: "data/score/aka-si-mi-krasna.musicxml",
+    tempomap: "data/alignment/aka-si-mi-krasna_tempomap.json",
+    scoreBeats: "data/alignment/aka-si-mi-krasna_score_beats.json",
+  },
+  chopin: {
+    label: "Chopin",
+    audio: "data/audio/chopin.wav",
+    score: "data/score/chopin.musicxml",
+    tempomap: "data/alignment/chopin_tempomap.json",
+    scoreBeats: "data/alignment/chopin_score_beats.json",
+  },
+};
+
 let osmd = null;
 let tempomap = [];
 let scoreBeats = [];
+let currentSongId = songSelect?.value || Object.keys(SONGS)[0];
 
 let syncStarted = false;
 let cursorSteps = [];
 let lastCursorIndex = -1;
 
-// Načíta JSON súbor a vráti jeho obsah
 async function loadJson(path) {
   const response = await fetch(path);
+
+  if (!response.ok) {
+    throw new Error(`Nepodarilo sa načítať súbor: ${path}`);
+  }
+
   return response.json();
 }
 
-// Na základe tempomapy prepočíta čas v audiu na čas v score
+function getCurrentSong() {
+  return SONGS[currentSongId];
+}
+
+function updateCurrentSongLabel() {
+  const song = getCurrentSong();
+  if (currentSongEl && song) {
+    currentSongEl.textContent = song.label;
+  }
+}
+
+function resetSyncState() {
+  tempomap = [];
+  scoreBeats = [];
+  cursorSteps = [];
+  lastCursorIndex = -1;
+  audioTimeEl.textContent = "0.00";
+  scoreTimeEl.textContent = "0.00";
+}
+
 function audioToScoreTime(audioTime) {
   if (tempomap.length === 0) return 0;
 
@@ -46,14 +89,17 @@ function audioToScoreTime(audioTime) {
   return last.score_time;
 }
 
-// Načíta tempomapu a score beaty zo súborov
-async function loadData() {
-  tempomap = await loadJson("data/alignment/aka-si-mi-krasna_tempomap.json");
-  scoreBeats = await loadJson("data/alignment/aka-si-mi-krasna_score_beats.json");
+async function loadData(song) {
+  const [loadedTempomap, loadedScoreBeats] = await Promise.all([
+    loadJson(song.tempomap),
+    loadJson(song.scoreBeats),
+  ]);
+
+  tempomap = loadedTempomap;
+  scoreBeats = loadedScoreBeats;
 }
 
-// Načíta MusicXML do OSMD a pripraví cursor mapu
-async function loadScore() {
+async function loadScore(song) {
   if (!osmd) {
     osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
       autoResize: true,
@@ -62,7 +108,7 @@ async function loadScore() {
     });
   }
 
-  await osmd.load("data/score/aka-si-mi-krasna.musicxml");
+  await osmd.load(song.score);
   osmd.render();
 
   osmd.cursor.show();
@@ -71,7 +117,6 @@ async function loadScore() {
   buildCursorMap();
 }
 
-// Zistí aktuálny čas cursoru v score
 function getCurrentCursorTime() {
   if (!osmd || !osmd.cursor || !osmd.cursor.Iterator) return null;
 
@@ -95,7 +140,6 @@ function getCurrentCursorTime() {
   return null;
 }
 
-// Prejde celé score a uloží si jednotlivé kroky cursoru
 function buildCursorMap() {
   cursorSteps = [];
   lastCursorIndex = -1;
@@ -125,7 +169,6 @@ function buildCursorMap() {
   osmd.cursor.reset();
 }
 
-// Nájde cursor index, ktorého čas je najbližšie k danému score času
 function findNearestCursorIndex(scoreTime) {
   if (cursorSteps.length === 0) return -1;
 
@@ -144,7 +187,6 @@ function findNearestCursorIndex(scoreTime) {
   return bestIndex;
 }
 
-// Posunie cursor na konkrétny index v score
 function moveCursorToIndex(index) {
   if (!osmd || !osmd.cursor) return;
   if (index < 0 || index === lastCursorIndex) return;
@@ -159,13 +201,11 @@ function moveCursorToIndex(index) {
   lastCursorIndex = index;
 }
 
-// Posunie cursor podľa času v score
 function moveCursorToScoreTime(scoreTime) {
   const index = findNearestCursorIndex(scoreTime);
   moveCursorToIndex(index);
 }
 
-// Priebežne synchronizuje audio čas, score čas a polohu cursoru
 function updateSync() {
   const audioTime = audio.currentTime;
   const scoreTime = audioToScoreTime(audioTime);
@@ -180,26 +220,50 @@ function updateSync() {
   requestAnimationFrame(updateSync);
 }
 
-// Spustí synchronizačný loop iba raz
 function startSyncLoop() {
   if (syncStarted) return;
   syncStarted = true;
   requestAnimationFrame(updateSync);
 }
 
-// Načíta dáta aj score a potom spustí synchronizáciu
+async function loadSelectedSong() {
+  const song = getCurrentSong();
+  if (!song) return;
+
+  try {
+    audio.pause();
+    resetSyncState();
+
+    audio.src = song.audio;
+    audio.load();
+
+    await loadData(song);
+    await loadScore(song);
+
+    updateCurrentSongLabel();
+    startSyncLoop();
+  } catch (error) {
+    console.error(error);
+    alert(`Nepodarilo sa načítať skladbu „${song.label}“. Skontroluj konzolu.`);
+  }
+}
+
 loadBtn.addEventListener("click", async () => {
-  await loadData();
-  await loadScore();
-  startSyncLoop();
+  await loadSelectedSong();
 });
 
-// Spustí prehrávanie audia
+songSelect.addEventListener("change", async (event) => {
+  currentSongId = event.target.value;
+  await loadSelectedSong();
+});
+
 playBtn.addEventListener("click", () => {
   audio.play();
 });
 
-// Pozastaví prehrávanie audia
 pauseBtn.addEventListener("click", () => {
   audio.pause();
 });
+
+updateCurrentSongLabel();
+loadSelectedSong();

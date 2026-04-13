@@ -1,19 +1,21 @@
-const audio = document.getElementById("audio");
-const loadBtn = document.getElementById("loadBtn");
-const playBtn = document.getElementById("playBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const songSelect = document.getElementById("songSelect");
-const currentSongEl = document.getElementById("currentSong");
-const audioTimeEl = document.getElementById("audioTime");
-const scoreTimeEl = document.getElementById("scoreTime");
-const scoreContainer = document.getElementById("score");
+const $ = (id) => document.getElementById(id);
+
+const audio = $("audio");
+const loadBtn = $("loadBtn");
+const playBtn = $("playBtn");
+const pauseBtn = $("pauseBtn");
+const songSelect = $("songSelect");
+const currentSongEl = $("currentSong");
+const audioTimeEl = $("audioTime");
+const scoreTimeEl = $("scoreTime");
+const scoreContainer = $("score");
 
 const SONGS = {
   "aka-si-mi-krasna": {
     label: "Aká si mi krásna",
     audio: "data/audio/aka-si-mi-krasna.wav",
     score: "data/score/aka-si-mi-krasna.musicxml",
-    tempomap: "data/alignment/aka-si-mi-krasna_tempomap.json",
+    tempomap: "data/alignment/aka-si-mi-krasna_tempomap_bidirectional.json",
     scoreBeats: "data/alignment/aka-si-mi-krasna_score_beats.json",
   },
   chopin: {
@@ -25,43 +27,83 @@ const SONGS = {
   },
 };
 
-let osmd = null;
-let tempomap = [];
-let scoreBeats = [];
-let currentSongId = songSelect?.value || Object.keys(SONGS)[0];
+const SCORE_SCALE = 4;
+const MAX_CURSOR_STEPS = 200000;
 
-let syncStarted = false;
+let osmd = null;
+let currentSongId = songSelect?.value || Object.keys(SONGS)[0];
+let tempomap = [];
 let cursorSteps = [];
 let lastCursorIndex = -1;
+let loopStarted = false;
 
-async function loadJson(path) {
-  const response = await fetch(path);
-
-  if (!response.ok) {
-    throw new Error(`Nepodarilo sa načítať súbor: ${path}`);
-  }
-
-  return response.json();
-}
-
-function getCurrentSong() {
+function getSong() {
   return SONGS[currentSongId];
 }
 
-function updateCurrentSongLabel() {
-  const song = getCurrentSong();
-  if (currentSongEl && song) {
-    currentSongEl.textContent = song.label;
-  }
+function setSongLabel() {
+  const song = getSong();
+  if (song && currentSongEl) currentSongEl.textContent = song.label;
 }
 
-function resetSyncState() {
+async function loadJson(path) {
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`Nepodarilo sa načítať súbor: ${path}`);
+  }
+  return response.json();
+}
+
+function resetState() {
   tempomap = [];
-  scoreBeats = [];
   cursorSteps = [];
   lastCursorIndex = -1;
-  audioTimeEl.textContent = "0.00";
-  scoreTimeEl.textContent = "0.00";
+
+  if (audioTimeEl) audioTimeEl.textContent = "0.00";
+  if (scoreTimeEl) scoreTimeEl.textContent = "0.00";
+}
+
+function normalizeTempomap(data) {
+  if (!Array.isArray(data)) return [];
+
+  const points = data
+    .filter(
+      (p) =>
+        p &&
+        Number.isFinite(Number(p.audio_time)) &&
+        Number.isFinite(Number(p.score_time)),
+    )
+    .map((p) => ({
+      audio_time: Number(p.audio_time),
+      score_time: Number(p.score_time),
+    }))
+    .sort((a, b) => a.audio_time - b.audio_time || a.score_time - b.score_time);
+
+  const result = [];
+  const eps = 1e-9;
+
+  for (const point of points) {
+    const last = result[result.length - 1];
+
+    if (last && Math.abs(last.audio_time - point.audio_time) < eps) {
+      last.score_time = Math.max(last.score_time, point.score_time);
+    } else {
+      result.push(point);
+    }
+  }
+
+  return result;
+}
+
+function getFirstScoreTime(scoreBeats) {
+  if (!Array.isArray(scoreBeats)) return 0;
+
+  const valid = scoreBeats
+    .map((p) => Number(p?.score_time))
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+
+  return valid[0] ?? 0;
 }
 
 function audioToScoreTime(audioTime) {
@@ -73,54 +115,28 @@ function audioToScoreTime(audioTime) {
   if (audioTime <= first.audio_time) return first.score_time;
   if (audioTime >= last.audio_time) return last.score_time;
 
-  for (let i = 0; i < tempomap.length - 1; i++) {
-    const a = tempomap[i];
-    const b = tempomap[i + 1];
+  let lo = 0;
+  let hi = tempomap.length - 1;
 
-    if (audioTime >= a.audio_time && audioTime <= b.audio_time) {
-      const audioDiff = b.audio_time - a.audio_time;
-      if (audioDiff === 0) return a.score_time;
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const t = tempomap[mid].audio_time;
 
-      const ratio = (audioTime - a.audio_time) / audioDiff;
-      return a.score_time + ratio * (b.score_time - a.score_time);
-    }
+    if (t === audioTime) return tempomap[mid].score_time;
+    if (t < audioTime) lo = mid + 1;
+    else hi = mid - 1;
   }
 
-  return last.score_time;
+  const left = tempomap[hi];
+  const right = tempomap[lo];
+  const ratio = (audioTime - left.audio_time) / (right.audio_time - left.audio_time);
+
+  return left.score_time + ratio * (right.score_time - left.score_time);
 }
 
-async function loadData(song) {
-  const [loadedTempomap, loadedScoreBeats] = await Promise.all([
-    loadJson(song.tempomap),
-    loadJson(song.scoreBeats),
-  ]);
-
-  tempomap = loadedTempomap;
-  scoreBeats = loadedScoreBeats;
-}
-
-async function loadScore(song) {
-  if (!osmd) {
-    osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
-      autoResize: true,
-      drawTitle: true,
-      followCursor: false,
-    });
-  }
-
-  await osmd.load(song.score);
-  osmd.render();
-
-  osmd.cursor.show();
-  osmd.cursor.reset();
-
-  buildCursorMap();
-}
-
-function getCurrentCursorTime() {
-  if (!osmd || !osmd.cursor || !osmd.cursor.Iterator) return null;
-
-  const it = osmd.cursor.Iterator;
+function getCursorTime() {
+  const it = osmd?.cursor?.Iterator;
+  if (!it) return null;
 
   if (typeof it.currentTimeStamp?.RealValue === "number") {
     return it.currentTimeStamp.RealValue;
@@ -130,140 +146,170 @@ function getCurrentCursorTime() {
     return it.CurrentTimeStamp.RealValue;
   }
 
-  if (it.CurrentVoiceEntries && it.CurrentVoiceEntries.length > 0) {
-    const ts = it.CurrentVoiceEntries[0].Timestamp;
-    if (typeof ts?.RealValue === "number") {
-      return ts.RealValue;
-    }
+  const entry = it.CurrentVoiceEntries?.[0];
+  if (typeof entry?.Timestamp?.RealValue === "number") {
+    return entry.Timestamp.RealValue;
   }
 
   return null;
 }
 
-function buildCursorMap() {
+function buildCursorMap(scoreStart = 0) {
   cursorSteps = [];
   lastCursorIndex = -1;
 
-  if (!osmd || !osmd.cursor || scoreBeats.length === 0) return;
+  if (!osmd?.cursor) return;
 
   osmd.cursor.reset();
 
-  let prevTime = null;
-  let safety = 0;
+  const rawTimes = [];
+  let prev = null;
+  let steps = 0;
 
-  while (!osmd.cursor.Iterator.EndReached && safety < 200000) {
-    const time = getCurrentCursorTime();
+  while (!osmd.cursor.Iterator.EndReached && steps < MAX_CURSOR_STEPS) {
+    const time = getCursorTime();
 
-    if (time !== null && (prevTime === null || time > prevTime)) {
-      cursorSteps.push({
-        stepIndex: cursorSteps.length,
-        scoreTime: scoreBeats[cursorSteps.length]?.score_time ?? time,
-      });
-      prevTime = time;
+    if (time !== null && (prev === null || time > prev)) {
+      rawTimes.push(time);
+      prev = time;
     }
 
     osmd.cursor.next();
-    safety++;
+    steps++;
   }
 
   osmd.cursor.reset();
+
+  if (rawTimes.length === 0) return;
+
+  const offset = scoreStart - rawTimes[0] * SCORE_SCALE;
+
+  cursorSteps = rawTimes.map((time, index) => ({
+    index,
+    scoreTime: time * SCORE_SCALE + offset,
+  }));
 }
 
 function findNearestCursorIndex(scoreTime) {
   if (cursorSteps.length === 0) return -1;
 
-  let bestIndex = cursorSteps[0].stepIndex;
-  let bestDiff = Math.abs(cursorSteps[0].scoreTime - scoreTime);
+  let lo = 0;
+  let hi = cursorSteps.length - 1;
 
-  for (let i = 1; i < cursorSteps.length; i++) {
-    const diff = Math.abs(cursorSteps[i].scoreTime - scoreTime);
+  if (scoreTime <= cursorSteps[0].scoreTime) return 0;
+  if (scoreTime >= cursorSteps[hi].scoreTime) return hi;
 
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      bestIndex = cursorSteps[i].stepIndex;
-    }
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const t = cursorSteps[mid].scoreTime;
+
+    if (t === scoreTime) return mid;
+    if (t < scoreTime) lo = mid + 1;
+    else hi = mid - 1;
   }
 
-  return bestIndex;
+  const left = hi;
+  const right = lo;
+
+  return Math.abs(cursorSteps[left].scoreTime - scoreTime) <=
+    Math.abs(cursorSteps[right].scoreTime - scoreTime)
+    ? left
+    : right;
 }
 
-function moveCursorToIndex(index) {
-  if (!osmd || !osmd.cursor) return;
-  if (index < 0 || index === lastCursorIndex) return;
+function moveCursorTo(index) {
+  if (!osmd?.cursor || index < 0 || index === lastCursorIndex) return;
 
-  osmd.cursor.reset();
+  if (lastCursorIndex === -1 || index < lastCursorIndex) {
+    osmd.cursor.reset();
+    lastCursorIndex = 0;
+  }
 
-  for (let i = 0; i < index; i++) {
-    if (osmd.cursor.Iterator.EndReached) break;
+  while (lastCursorIndex < index && !osmd.cursor.Iterator.EndReached) {
     osmd.cursor.next();
+    lastCursorIndex++;
   }
-
-  lastCursorIndex = index;
 }
 
-function moveCursorToScoreTime(scoreTime) {
-  const index = findNearestCursorIndex(scoreTime);
-  moveCursorToIndex(index);
-}
-
-function updateSync() {
+function syncNow() {
   const audioTime = audio.currentTime;
   const scoreTime = audioToScoreTime(audioTime);
 
-  audioTimeEl.textContent = audioTime.toFixed(2);
-  scoreTimeEl.textContent = scoreTime.toFixed(2);
+  if (audioTimeEl) audioTimeEl.textContent = audioTime.toFixed(2);
+  if (scoreTimeEl) scoreTimeEl.textContent = scoreTime.toFixed(2);
 
-  if (osmd && tempomap.length > 0 && cursorSteps.length > 0) {
-    moveCursorToScoreTime(scoreTime);
+  if (tempomap.length > 0 && cursorSteps.length > 0) {
+    moveCursorTo(findNearestCursorIndex(scoreTime));
   }
-
-  requestAnimationFrame(updateSync);
 }
 
-function startSyncLoop() {
-  if (syncStarted) return;
-  syncStarted = true;
-  requestAnimationFrame(updateSync);
+function startLoop() {
+  if (loopStarted) return;
+  loopStarted = true;
+
+  const tick = () => {
+    syncNow();
+    requestAnimationFrame(tick);
+  };
+
+  requestAnimationFrame(tick);
 }
 
 async function loadSelectedSong() {
-  const song = getCurrentSong();
+  const song = getSong();
   if (!song) return;
 
   try {
     audio.pause();
-    resetSyncState();
+    resetState();
 
     audio.src = song.audio;
     audio.load();
 
-    await loadData(song);
-    await loadScore(song);
+    const [rawTempomap, rawScoreBeats] = await Promise.all([
+      loadJson(song.tempomap),
+      loadJson(song.scoreBeats),
+    ]);
 
-    updateCurrentSongLabel();
-    startSyncLoop();
+    tempomap = normalizeTempomap(rawTempomap);
+    const scoreStart = getFirstScoreTime(rawScoreBeats);
+
+    if (!osmd) {
+      osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
+        autoResize: true,
+        drawTitle: true,
+        followCursor: false,
+      });
+    }
+
+    await osmd.load(song.score);
+    osmd.render();
+    osmd.cursor.show();
+    osmd.cursor.reset();
+
+    buildCursorMap(scoreStart);
+    setSongLabel();
+    syncNow();
+    startLoop();
   } catch (error) {
     console.error(error);
     alert(`Nepodarilo sa načítať skladbu „${song.label}“. Skontroluj konzolu.`);
   }
 }
 
-loadBtn.addEventListener("click", async () => {
-  await loadSelectedSong();
-});
+loadBtn.addEventListener("click", loadSelectedSong);
 
-songSelect.addEventListener("change", async (event) => {
+songSelect.addEventListener("change", (event) => {
   currentSongId = event.target.value;
-  await loadSelectedSong();
+  loadSelectedSong();
 });
 
-playBtn.addEventListener("click", () => {
-  audio.play();
-});
+playBtn.addEventListener("click", () => audio.play());
+pauseBtn.addEventListener("click", () => audio.pause());
 
-pauseBtn.addEventListener("click", () => {
-  audio.pause();
-});
+audio.addEventListener("seeking", syncNow);
+audio.addEventListener("seeked", syncNow);
+audio.addEventListener("loadedmetadata", syncNow);
 
-updateCurrentSongLabel();
+setSongLabel();
 loadSelectedSong();

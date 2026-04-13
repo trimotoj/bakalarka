@@ -51,3 +51,22 @@ def backtrack_path(acc: np.ndarray) -> np.ndarray:
 
     path.reverse()
     return np.asarray(path, dtype=int)
+
+
+def remap_reversed_path(path: np.ndarray, n_rows: int, n_cols: int) -> np.ndarray:
+    out = path.copy()
+    out[:, 0] = n_rows - 1 - out[:, 0]
+    out[:, 1] = n_cols - 1 - out[:, 1]
+    return out[::-1]
+
+
+def dtw_reverse(cost: np.ndarray) -> np.ndarray:
+    if cost.ndim != 2:
+        raise ValueError("cost must be 2D")
+    if cost.shape[0] == 0 or cost.shape[1] == 0:
+        raise ValueError("cost must not be empty")
+
+    n_rows, n_cols = cost.shape
+    reversed_cost = np.flipud(np.fliplr(cost))
+    reversed_path = dtw(reversed_cost)
+    return remap_reversed_path(reversed_path, n_rows, n_cols)

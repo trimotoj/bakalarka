@@ -1,29 +1,79 @@
+:root {
+  --border: #d0d7de;
+  --panel-bg: #ffffff;
+  --page-bg: #f6f8fa;
+  --text: #1f2328;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  margin: 20px;
+  color: var(--text);
+  background: var(--page-bg);
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 16px;
 }
 
 h1 {
+  margin: 0;
+}
+
+.panel {
   margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
 }
 
 .controls {
-  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
-.controls button {
-  margin-right: 8px;
+.controls__label {
+  font-weight: 700;
+}
+
+select,
+button,
+audio {
+  font: inherit;
+}
+
+button {
   padding: 8px 14px;
-  font-size: 14px;
+  cursor: pointer;
 }
 
-.status {
+.status p {
+  margin: 0 0 8px;
+}
+
+.status p:last-child {
+  margin-bottom: 0;
+}
+
+#audio {
+  width: 100%;
   margin-bottom: 16px;
 }
 
-#score {
-  border: 1px solid #ccc;
-  padding: 16px;
+.score-panel {
   min-height: 400px;
-  background: #fff;
+  overflow-x: auto;
 }

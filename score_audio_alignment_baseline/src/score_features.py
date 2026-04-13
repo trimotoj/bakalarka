@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import partitura
 
@@ -8,7 +10,7 @@ def score_to_note_array(score) -> np.ndarray:
 
 def build_score_time_grid(note_array: np.ndarray, fps: int = 40) -> np.ndarray:
     if fps <= 0:
-        raise ValueError("fps must be > 0")
+        raise ValueError("fps must be greater than 0")
 
     step = 1.0 / fps
     onsets = note_array["onset_beat"].astype(float)
@@ -17,7 +19,6 @@ def build_score_time_grid(note_array: np.ndarray, fps: int = 40) -> np.ndarray:
 
     start = float(np.floor(onsets.min() / step) * step)
     end = float(np.ceil(offsets.max() / step) * step)
-
     return np.arange(start, end + step, step)
 
 
@@ -29,8 +30,8 @@ def note_array_to_chroma(note_array: np.ndarray, frame_times: np.ndarray) -> np.
 
     chroma = np.zeros((len(frame_times), 12), dtype=float)
 
-    for i, t in enumerate(frame_times):
-        active = (onsets <= t) & (t < offsets)
+    for i, time_point in enumerate(frame_times):
+        active = (onsets <= time_point) & (time_point < offsets)
         if not np.any(active):
             continue
 

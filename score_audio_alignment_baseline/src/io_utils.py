@@ -1,9 +1,17 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
 import librosa
 import numpy as np
 import partitura
+
+
+def _ensure_parent(path: str | Path) -> Path:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def load_score(path: str | Path):
@@ -16,20 +24,14 @@ def load_audio(path: str | Path, sr: int = 22050) -> tuple[np.ndarray, int]:
 
 
 def save_tempomap_csv(path: str | Path, tempomap: np.ndarray) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = _ensure_parent(path)
     np.savetxt(
-        path,
-        tempomap,
-        delimiter=",",
-        header="score_time,audio_time",
-        comments="",
+        path, tempomap, delimiter=",", header="score_time,audio_time", comments=""
     )
 
 
 def save_path_csv(path: str | Path, path_points: np.ndarray) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = _ensure_parent(path)
     np.savetxt(
         path,
         path_points,
@@ -41,9 +43,7 @@ def save_path_csv(path: str | Path, path_points: np.ndarray) -> None:
 
 
 def save_score_beats_json(path: str | Path, note_array: np.ndarray) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
+    path = _ensure_parent(path)
     unique_onsets = np.unique(note_array["onset_beat"].astype(float))
     data = [{"score_time": float(onset)} for onset in unique_onsets]
 

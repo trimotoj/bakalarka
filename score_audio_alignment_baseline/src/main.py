@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from src.audio_features import (
@@ -35,8 +37,8 @@ from src.visualization import (
 )
 
 
-SCORE_PATH = Path("data/score/chopin.musicxml")
-AUDIO_PATH = Path("data/audio/chopin.wav")
+SCORE_PATH = Path("data/score/aka-si-mi-krasna.musicxml")
+AUDIO_PATH = Path("data/audio/aka-si-mi-krasna.wav")
 OUTPUT_DIR = Path("data/output")
 PLOTS_DIR = OUTPUT_DIR / "plots"
 
@@ -50,47 +52,58 @@ DTW_MODE = "all"  # "forward" | "reverse" | "all"
 
 
 def get_piece_name(score_path: Path, audio_path: Path) -> str:
-    if score_path.stem == audio_path.stem:
-        return score_path.stem
-    return score_path.stem or audio_path.stem
+    return (
+        score_path.stem
+        if score_path.stem == audio_path.stem
+        else (score_path.stem or audio_path.stem)
+    )
 
 
-def build_output_paths(piece_name: str) -> dict[str, Path]:
-    return {
-        "tempomap_csv": OUTPUT_DIR / f"{piece_name}_tempomap.csv",
-        "path_csv": OUTPUT_DIR / f"{piece_name}_path.csv",
-        "tempomap_json": OUTPUT_DIR / f"{piece_name}_tempomap.json",
-        "cost_plot": PLOTS_DIR / f"{piece_name}_cost_matrix_with_path.png",
-        "tempomap_plot": PLOTS_DIR / f"{piece_name}_tempomap.png",
-        "aligned_chromas_plot": PLOTS_DIR / f"{piece_name}_aligned_chromas.png",
-        "reverse_tempomap_csv": OUTPUT_DIR / f"{piece_name}_tempomap_reverse.csv",
-        "reverse_path_csv": OUTPUT_DIR / f"{piece_name}_path_reverse.csv",
-        "reverse_tempomap_json": OUTPUT_DIR / f"{piece_name}_tempomap_reverse.json",
-        "reverse_cost_plot": PLOTS_DIR
-        / f"{piece_name}_cost_matrix_with_path_reverse.png",
-        "reverse_tempomap_plot": PLOTS_DIR / f"{piece_name}_tempomap_reverse.png",
-        "reverse_aligned_chromas_plot": PLOTS_DIR
-        / f"{piece_name}_aligned_chromas_reverse.png",
+def build_output_paths(piece_name: str) -> dict[str, object]:
+    common = {
         "score_beats_json": OUTPUT_DIR / f"{piece_name}_score_beats.json",
         "score_chroma_plot": PLOTS_DIR / f"{piece_name}_score_chroma.png",
         "audio_chroma_plot": PLOTS_DIR / f"{piece_name}_audio_chroma.png",
         "paths_side_by_side_plot": PLOTS_DIR / f"{piece_name}_paths_side_by_side.png",
     }
 
+    variants = {}
+    for name, suffix in {"forward": "", "reverse": "_reverse"}.items():
+        variants[name] = {
+            "tempomap_csv": OUTPUT_DIR / f"{piece_name}_tempomap{suffix}.csv",
+            "path_csv": OUTPUT_DIR / f"{piece_name}_path{suffix}.csv",
+            "tempomap_json": OUTPUT_DIR / f"{piece_name}_tempomap{suffix}.json",
+            "cost_plot": PLOTS_DIR / f"{piece_name}_cost_matrix_with_path{suffix}.png",
+            "tempomap_plot": PLOTS_DIR / f"{piece_name}_tempomap{suffix}.png",
+            "aligned_plot": PLOTS_DIR / f"{piece_name}_aligned_chromas{suffix}.png",
+        }
 
-def save_common_plots(
+    return {"common": common, "variants": variants}
+
+
+def build_tempomap_from_path(path, score_times, audio_times):
+    tempomap = make_tempomap(path, score_times, audio_times)
+    tempomap = remove_duplicate_points(tempomap)
+    return smooth_tempomap(tempomap, window=SMOOTH_WINDOW)
+
+
+def save_common_outputs(
+    note_array,
     score_chroma,
     audio_chroma,
     score_times,
     audio_times,
-    output_paths: dict[str, Path],
+    output_paths: dict[str, object],
 ) -> None:
+    common = output_paths["common"]
+    save_score_beats_json(common["score_beats_json"], note_array)
+
     plot_chroma(
         score_chroma,
         score_times,
         title="Score chroma",
         x_label="Score time [beats]",
-        save_path=output_paths["score_chroma_plot"],
+        save_path=common["score_chroma_plot"],
         show=SHOW_PLOTS,
     )
     plot_chroma(
@@ -98,34 +111,12 @@ def save_common_plots(
         audio_times,
         title="Audio chroma",
         x_label="Audio time [s]",
-        save_path=output_paths["audio_chroma_plot"],
+        save_path=common["audio_chroma_plot"],
         show=SHOW_PLOTS,
     )
 
 
-def get_variant_keys(variant: str) -> dict[str, str]:
-    if variant == "forward":
-        return {
-            "tempomap_csv": "tempomap_csv",
-            "path_csv": "path_csv",
-            "tempomap_json": "tempomap_json",
-            "cost_plot": "cost_plot",
-            "tempomap_plot": "tempomap_plot",
-            "aligned_plot": "aligned_chromas_plot",
-        }
-    if variant == "reverse":
-        return {
-            "tempomap_csv": "reverse_tempomap_csv",
-            "path_csv": "reverse_path_csv",
-            "tempomap_json": "reverse_tempomap_json",
-            "cost_plot": "reverse_cost_plot",
-            "tempomap_plot": "reverse_tempomap_plot",
-            "aligned_plot": "reverse_aligned_chromas_plot",
-        }
-    raise ValueError(f"Unknown variant: {variant}")
-
-
-def save_variant_results(
+def save_variant_outputs(
     variant: str,
     path,
     tempomap,
@@ -133,52 +124,55 @@ def save_variant_results(
     score_chroma,
     audio_chroma,
     audio_times,
-    output_paths: dict[str, Path],
+    output_paths: dict[str, object],
 ) -> None:
-    keys = get_variant_keys(variant)
+    paths = output_paths["variants"][variant]
 
-    save_tempomap_csv(output_paths[keys["tempomap_csv"]], tempomap)
-    save_path_csv(output_paths[keys["path_csv"]], path)
-    export_tempomap_json(tempomap, output_paths[keys["tempomap_json"]])
+    save_tempomap_csv(paths["tempomap_csv"], tempomap)
+    save_path_csv(paths["path_csv"], path)
+    export_tempomap_json(tempomap, paths["tempomap_json"])
 
     plot_cost_matrix_with_path(
         cost,
         path,
-        save_path=output_paths[keys["cost_plot"]],
+        save_path=paths["cost_plot"],
         show=SHOW_PLOTS,
         title=f"Cost matrix with {variant} DTW path",
     )
     plot_tempomap(
         tempomap,
-        save_path=output_paths[keys["tempomap_plot"]],
+        save_path=paths["tempomap_plot"],
         show=SHOW_PLOTS,
         title=f"{variant.capitalize()} tempomap",
     )
 
-    score_chroma_on_audio_time = warp_score_chroma_to_audio_time(
+    warped_score_chroma = warp_score_chroma_to_audio_time(
         score_chroma,
         path,
         n_audio_frames=len(audio_chroma),
     )
     plot_aligned_chromas(
-        score_chroma_on_audio_time,
+        warped_score_chroma,
         audio_chroma,
         audio_times,
-        save_path=output_paths[keys["aligned_plot"]],
+        save_path=paths["aligned_plot"],
         show=SHOW_PLOTS,
         title_prefix=f"{variant.capitalize()} – ",
     )
 
-    print(f"{variant} path: {path.shape}")
-    print(f"{variant} tempomap: {tempomap.shape}")
-    print(f"{variant} tempomap json: {output_paths[keys['tempomap_json']]}")
+    print(f"{variant} path shape: {path.shape}")
+    print(f"{variant} tempomap shape: {tempomap.shape}")
+    print(f"{variant} tempomap json: {paths['tempomap_json']}")
 
 
-def build_tempomap_from_path(path, score_times, audio_times):
-    tempomap = make_tempomap(path, score_times, audio_times)
-    tempomap = remove_duplicate_points(tempomap)
-    tempomap = smooth_tempomap(tempomap, window=SMOOTH_WINDOW)
-    return tempomap
+def compute_variant_paths(cost):
+    if DTW_MODE == "forward":
+        return {"forward": dtw(cost)}
+    if DTW_MODE == "reverse":
+        return {"reverse": dtw_reverse(cost)}
+    if DTW_MODE == "all":
+        return {"forward": dtw(cost), "reverse": dtw_reverse(cost)}
+    raise ValueError('DTW_MODE must be one of: "forward", "reverse", "all"')
 
 
 def main() -> None:
@@ -205,8 +199,8 @@ def main() -> None:
 
     cost = cosine_cost_matrix(score_chroma, audio_chroma)
 
-    save_score_beats_json(output_paths["score_beats_json"], note_array)
-    save_common_plots(
+    save_common_outputs(
+        note_array,
         score_chroma,
         audio_chroma,
         score_times,
@@ -216,17 +210,17 @@ def main() -> None:
 
     print(f"piece: {piece_name}")
     print(f"trim start: {start_time:.6f} s")
-    print(f"score_chroma: {score_chroma.shape}")
-    print(f"audio_chroma: {audio_chroma.shape}")
-    print(f"cost: {cost.shape}")
+    print(f"score_chroma shape: {score_chroma.shape}")
+    print(f"audio_chroma shape: {audio_chroma.shape}")
+    print(f"cost shape: {cost.shape}")
     print(f"dtw mode: {DTW_MODE}")
-    print(f"score beats json: {output_paths['score_beats_json']}")
+    print(f"score beats json: {output_paths['common']['score_beats_json']}")
 
-    if DTW_MODE == "forward":
-        path = dtw(cost)
+    variant_paths = compute_variant_paths(cost)
+    for variant, path in variant_paths.items():
         tempomap = build_tempomap_from_path(path, score_times, audio_times)
-        save_variant_results(
-            "forward",
+        save_variant_outputs(
+            variant,
             path,
             tempomap,
             cost,
@@ -236,62 +230,14 @@ def main() -> None:
             output_paths,
         )
 
-    elif DTW_MODE == "reverse":
-        path = dtw_reverse(cost)
-        tempomap = build_tempomap_from_path(path, score_times, audio_times)
-        save_variant_results(
-            "reverse",
-            path,
-            tempomap,
-            cost,
-            score_chroma,
-            audio_chroma,
-            audio_times,
-            output_paths,
-        )
-
-    elif DTW_MODE == "all":
-        forward_path = dtw(cost)
-        reverse_path = dtw_reverse(cost)
-
-        forward_tempomap = build_tempomap_from_path(
-            forward_path, score_times, audio_times
-        )
-        reverse_tempomap = build_tempomap_from_path(
-            reverse_path, score_times, audio_times
-        )
-
-        save_variant_results(
-            "forward",
-            forward_path,
-            forward_tempomap,
-            cost,
-            score_chroma,
-            audio_chroma,
-            audio_times,
-            output_paths,
-        )
-        save_variant_results(
-            "reverse",
-            reverse_path,
-            reverse_tempomap,
-            cost,
-            score_chroma,
-            audio_chroma,
-            audio_times,
-            output_paths,
-        )
-
+    if {"forward", "reverse"}.issubset(variant_paths):
         plot_paths_side_by_side(
             cost,
-            forward_path,
-            reverse_path,
-            save_path=output_paths["paths_side_by_side_plot"],
+            variant_paths["forward"],
+            variant_paths["reverse"],
+            save_path=output_paths["common"]["paths_side_by_side_plot"],
             show=SHOW_PLOTS,
         )
-
-    else:
-        raise ValueError('DTW_MODE must be one of: "forward", "reverse", "all"')
 
 
 if __name__ == "__main__":

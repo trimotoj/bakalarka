@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import numpy as np
 
 
 DTW_STEPS = [(-1, -1), (-1, 0), (0, -1)]
 
 
-def dtw(cost: np.ndarray) -> np.ndarray:
+def _validate_cost(cost: np.ndarray) -> None:
     if cost.ndim != 2:
-        raise ValueError("cost must be 2D")
-    if cost.shape[0] == 0 or cost.shape[1] == 0:
+        raise ValueError("cost must be a 2D array")
+    if 0 in cost.shape:
         raise ValueError("cost must not be empty")
 
+
+def _accumulate_cost(cost: np.ndarray) -> np.ndarray:
     n_rows, n_cols = cost.shape
     acc = np.full((n_rows, n_cols), np.inf, dtype=float)
     acc[0, 0] = float(cost[0, 0])
@@ -19,54 +23,54 @@ def dtw(cost: np.ndarray) -> np.ndarray:
             if i == 0 and j == 0:
                 continue
 
-            best_prev = np.inf
-            for di, dj in DTW_STEPS:
-                pi = i + di
-                pj = j + dj
-                if pi >= 0 and pj >= 0:
-                    best_prev = min(best_prev, acc[pi, pj])
-
+            best_prev = min(
+                acc[i + di, j + dj]
+                for di, dj in DTW_STEPS
+                if i + di >= 0 and j + dj >= 0
+            )
             acc[i, j] = float(cost[i, j]) + best_prev
 
-    return backtrack_path(acc)
+    return acc
 
 
 def backtrack_path(acc: np.ndarray) -> np.ndarray:
+    """Recover the optimal DTW path from an accumulated cost matrix."""
     i = acc.shape[0] - 1
     j = acc.shape[1] - 1
     path = [(i, j)]
 
     while i > 0 or j > 0:
-        options = []
-
+        candidates = []
         if i > 0 and j > 0:
-            options.append((acc[i - 1, j - 1], i - 1, j - 1))
+            candidates.append((acc[i - 1, j - 1], i - 1, j - 1))
         if i > 0:
-            options.append((acc[i - 1, j], i - 1, j))
+            candidates.append((acc[i - 1, j], i - 1, j))
         if j > 0:
-            options.append((acc[i, j - 1], i, j - 1))
+            candidates.append((acc[i, j - 1], i, j - 1))
 
-        _, i, j = min(options, key=lambda item: item[0])
+        _, i, j = min(candidates, key=lambda item: item[0])
         path.append((i, j))
 
     path.reverse()
     return np.asarray(path, dtype=int)
 
 
-def remap_reversed_path(path: np.ndarray, n_rows: int, n_cols: int) -> np.ndarray:
-    out = path.copy()
-    out[:, 0] = n_rows - 1 - out[:, 0]
-    out[:, 1] = n_cols - 1 - out[:, 1]
-    return out[::-1]
+def dtw(cost: np.ndarray) -> np.ndarray:
+    """Compute the forward DTW path."""
+    _validate_cost(cost)
+    acc = _accumulate_cost(cost)
+    return backtrack_path(acc)
 
 
 def dtw_reverse(cost: np.ndarray) -> np.ndarray:
-    if cost.ndim != 2:
-        raise ValueError("cost must be 2D")
-    if cost.shape[0] == 0 or cost.shape[1] == 0:
-        raise ValueError("cost must not be empty")
-
+    """Compute a DTW path by running DTW on the reversed cost matrix."""
+    _validate_cost(cost)
     n_rows, n_cols = cost.shape
-    reversed_cost = np.flipud(np.fliplr(cost))
+
+    reversed_cost = np.flip(cost, axis=(0, 1))
     reversed_path = dtw(reversed_cost)
-    return remap_reversed_path(reversed_path, n_rows, n_cols)
+
+    path = reversed_path.copy()
+    path[:, 0] = n_rows - 1 - path[:, 0]
+    path[:, 1] = n_cols - 1 - path[:, 1]
+    return path[::-1]

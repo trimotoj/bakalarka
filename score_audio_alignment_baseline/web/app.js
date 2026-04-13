@@ -1,21 +1,23 @@
 const $ = (id) => document.getElementById(id);
 
-const audio = $("audio");
-const loadBtn = $("loadBtn");
-const playBtn = $("playBtn");
-const pauseBtn = $("pauseBtn");
-const songSelect = $("songSelect");
-const currentSongEl = $("currentSong");
-const audioTimeEl = $("audioTime");
-const scoreTimeEl = $("scoreTime");
-const scoreContainer = $("score");
+const dom = {
+  audio: $("audio"),
+  loadBtn: $("loadBtn"),
+  playBtn: $("playBtn"),
+  pauseBtn: $("pauseBtn"),
+  songSelect: $("songSelect"),
+  currentSong: $("currentSong"),
+  audioTime: $("audioTime"),
+  scoreTime: $("scoreTime"),
+  score: $("score"),
+};
 
 const SONGS = {
   "aka-si-mi-krasna": {
     label: "Aká si mi krásna",
     audio: "data/audio/aka-si-mi-krasna.wav",
     score: "data/score/aka-si-mi-krasna.musicxml",
-    tempomap: "data/alignment/aka-si-mi-krasna_tempomap_bidirectional.json",
+    tempomap: "data/alignment/aka-si-mi-krasna_tempomap.json",
     scoreBeats: "data/alignment/aka-si-mi-krasna_score_beats.json",
   },
   chopin: {
@@ -29,24 +31,41 @@ const SONGS = {
 
 const SCORE_SCALE = 4;
 const MAX_CURSOR_STEPS = 200000;
+const EPS = 1e-9;
 
-let osmd = null;
-let currentSongId = songSelect?.value || Object.keys(SONGS)[0];
-let tempomap = [];
-let cursorSteps = [];
-let lastCursorIndex = -1;
-let loopStarted = false;
+const state = {
+  currentSongId: dom.songSelect?.value || Object.keys(SONGS)[0],
+  osmd: null,
+  tempomap: [],
+  cursorSteps: [],
+  lastCursorIndex: -1,
+  loopStarted: false,
+};
 
 function getSong() {
-  return SONGS[currentSongId];
+  return SONGS[state.currentSongId];
 }
 
 function setSongLabel() {
   const song = getSong();
-  if (song && currentSongEl) currentSongEl.textContent = song.label;
+  if (song) {
+    dom.currentSong.textContent = song.label;
+  }
 }
 
-async function loadJson(path) {
+function setTimes(audioTime = 0, scoreTime = 0) {
+  dom.audioTime.textContent = audioTime.toFixed(2);
+  dom.scoreTime.textContent = scoreTime.toFixed(2);
+}
+
+function resetAlignmentState() {
+  state.tempomap = [];
+  state.cursorSteps = [];
+  state.lastCursorIndex = -1;
+  setTimes();
+}
+
+async function fetchJson(path) {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Nepodarilo sa načítať súbor: ${path}`);
@@ -54,99 +73,144 @@ async function loadJson(path) {
   return response.json();
 }
 
-function resetState() {
-  tempomap = [];
-  cursorSteps = [];
-  lastCursorIndex = -1;
-
-  if (audioTimeEl) audioTimeEl.textContent = "0.00";
-  if (scoreTimeEl) scoreTimeEl.textContent = "0.00";
+function toFiniteNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function normalizeTempomap(data) {
-  if (!Array.isArray(data)) return [];
-
-  const points = data
-    .filter(
-      (p) =>
-        p &&
-        Number.isFinite(Number(p.audio_time)) &&
-        Number.isFinite(Number(p.score_time)),
-    )
-    .map((p) => ({
-      audio_time: Number(p.audio_time),
-      score_time: Number(p.score_time),
-    }))
-    .sort((a, b) => a.audio_time - b.audio_time || a.score_time - b.score_time);
-
-  const result = [];
-  const eps = 1e-9;
-
-  for (const point of points) {
-    const last = result[result.length - 1];
-
-    if (last && Math.abs(last.audio_time - point.audio_time) < eps) {
-      last.score_time = Math.max(last.score_time, point.score_time);
-    } else {
-      result.push(point);
-    }
+  if (!Array.isArray(data)) {
+    return [];
   }
 
-  return result;
+  const points = data
+    .map((point) => ({
+      audio_time: toFiniteNumber(point?.audio_time),
+      score_time: toFiniteNumber(point?.score_time),
+    }))
+    .filter((point) => point.audio_time !== null && point.score_time !== null)
+    .sort((a, b) => a.audio_time - b.audio_time || a.score_time - b.score_time);
+
+  const merged = [];
+
+  for (const point of points) {
+    const last = merged[merged.length - 1];
+
+    if (last && Math.abs(last.audio_time - point.audio_time) < EPS) {
+      last.score_time = Math.max(last.score_time, point.score_time);
+      continue;
+    }
+
+    merged.push(point);
+  }
+
+  return merged;
 }
 
-function getFirstScoreTime(scoreBeats) {
-  if (!Array.isArray(scoreBeats)) return 0;
+function getScoreStart(scoreBeats) {
+  if (!Array.isArray(scoreBeats)) {
+    return 0;
+  }
 
-  const valid = scoreBeats
-    .map((p) => Number(p?.score_time))
-    .filter(Number.isFinite)
+  const values = scoreBeats
+    .map((item) => toFiniteNumber(item?.score_time))
+    .filter((value) => value !== null)
     .sort((a, b) => a - b);
 
-  return valid[0] ?? 0;
+  return values[0] ?? 0;
 }
 
-function audioToScoreTime(audioTime) {
-  if (tempomap.length === 0) return 0;
-
-  const first = tempomap[0];
-  const last = tempomap[tempomap.length - 1];
-
-  if (audioTime <= first.audio_time) return first.score_time;
-  if (audioTime >= last.audio_time) return last.score_time;
-
+function findInsertIndex(items, value, getValue) {
   let lo = 0;
-  let hi = tempomap.length - 1;
+  let hi = items.length - 1;
 
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
-    const t = tempomap[mid].audio_time;
+    const midValue = getValue(items[mid]);
 
-    if (t === audioTime) return tempomap[mid].score_time;
-    if (t < audioTime) lo = mid + 1;
-    else hi = mid - 1;
+    if (midValue === value) {
+      return mid;
+    }
+
+    if (midValue < value) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
   }
 
-  const left = tempomap[hi];
-  const right = tempomap[lo];
-  const ratio = (audioTime - left.audio_time) / (right.audio_time - left.audio_time);
+  return lo;
+}
+
+function findNearestIndex(items, value, getValue) {
+  if (items.length === 0) {
+    return -1;
+  }
+
+  const firstValue = getValue(items[0]);
+  const lastIndex = items.length - 1;
+  const lastValue = getValue(items[lastIndex]);
+
+  if (value <= firstValue) {
+    return 0;
+  }
+
+  if (value >= lastValue) {
+    return lastIndex;
+  }
+
+  const right = findInsertIndex(items, value, getValue);
+  const left = right - 1;
+
+  return Math.abs(getValue(items[left]) - value) <=
+    Math.abs(getValue(items[right]) - value)
+    ? left
+    : right;
+}
+
+function interpolateFromMap(audioTime) {
+  const points = state.tempomap;
+
+  if (points.length === 0) {
+    return 0;
+  }
+
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  if (audioTime <= first.audio_time) {
+    return first.score_time;
+  }
+
+  if (audioTime >= last.audio_time) {
+    return last.score_time;
+  }
+
+  const rightIndex = findInsertIndex(points, audioTime, (point) => point.audio_time);
+  const left = points[rightIndex - 1];
+  const right = points[rightIndex];
+
+  const ratio =
+    (audioTime - left.audio_time) / (right.audio_time - left.audio_time);
 
   return left.score_time + ratio * (right.score_time - left.score_time);
 }
 
-function getCursorTime() {
-  const it = osmd?.cursor?.Iterator;
-  if (!it) return null;
-
-  if (typeof it.currentTimeStamp?.RealValue === "number") {
-    return it.currentTimeStamp.RealValue;
+function getCursorTimestamp() {
+  const iterator = state.osmd?.cursor?.Iterator;
+  if (!iterator) {
+    return null;
   }
 
-  if (typeof it.CurrentTimeStamp?.RealValue === "number") {
-    return it.CurrentTimeStamp.RealValue;
+  if (typeof iterator.currentTimeStamp?.RealValue === "number") {
+    return iterator.currentTimeStamp.RealValue;
   }
 
-  const entry = it.CurrentVoiceEntries?.[0];
+  if (typeof iterator.CurrentTimeStamp?.RealValue === "number") {
+    return iterator.CurrentTimeStamp.RealValue;
+  }
+
+  const entry = iterator.CurrentVoiceEntries?.[0];
   if (typeof entry?.Timestamp?.RealValue === "number") {
     return entry.Timestamp.RealValue;
   }
@@ -154,101 +218,119 @@ function getCursorTime() {
   return null;
 }
 
-function buildCursorMap(scoreStart = 0) {
-  cursorSteps = [];
-  lastCursorIndex = -1;
+function resetCursor() {
+  state.osmd?.cursor?.reset();
+  state.lastCursorIndex = 0;
+}
 
-  if (!osmd?.cursor) return;
+function buildCursorSteps(scoreStart = 0) {
+  state.cursorSteps = [];
+  state.lastCursorIndex = -1;
 
-  osmd.cursor.reset();
-
-  const rawTimes = [];
-  let prev = null;
-  let steps = 0;
-
-  while (!osmd.cursor.Iterator.EndReached && steps < MAX_CURSOR_STEPS) {
-    const time = getCursorTime();
-
-    if (time !== null && (prev === null || time > prev)) {
-      rawTimes.push(time);
-      prev = time;
-    }
-
-    osmd.cursor.next();
-    steps++;
+  if (!state.osmd?.cursor) {
+    return;
   }
 
-  osmd.cursor.reset();
+  state.osmd.cursor.reset();
 
-  if (rawTimes.length === 0) return;
+  const rawTimes = [];
+  let previousTime = null;
+  let stepCount = 0;
+
+  while (!state.osmd.cursor.Iterator.EndReached && stepCount < MAX_CURSOR_STEPS) {
+    const time = getCursorTimestamp();
+
+    if (time !== null && (previousTime === null || time > previousTime)) {
+      rawTimes.push(time);
+      previousTime = time;
+    }
+
+    state.osmd.cursor.next();
+    stepCount += 1;
+  }
+
+  state.osmd.cursor.reset();
+
+  if (rawTimes.length === 0) {
+    return;
+  }
 
   const offset = scoreStart - rawTimes[0] * SCORE_SCALE;
 
-  cursorSteps = rawTimes.map((time, index) => ({
+  state.cursorSteps = rawTimes.map((time, index) => ({
     index,
     scoreTime: time * SCORE_SCALE + offset,
   }));
 }
 
-function findNearestCursorIndex(scoreTime) {
-  if (cursorSteps.length === 0) return -1;
-
-  let lo = 0;
-  let hi = cursorSteps.length - 1;
-
-  if (scoreTime <= cursorSteps[0].scoreTime) return 0;
-  if (scoreTime >= cursorSteps[hi].scoreTime) return hi;
-
-  while (lo <= hi) {
-    const mid = Math.floor((lo + hi) / 2);
-    const t = cursorSteps[mid].scoreTime;
-
-    if (t === scoreTime) return mid;
-    if (t < scoreTime) lo = mid + 1;
-    else hi = mid - 1;
-  }
-
-  const left = hi;
-  const right = lo;
-
-  return Math.abs(cursorSteps[left].scoreTime - scoreTime) <=
-    Math.abs(cursorSteps[right].scoreTime - scoreTime)
-    ? left
-    : right;
-}
-
 function moveCursorTo(index) {
-  if (!osmd?.cursor || index < 0 || index === lastCursorIndex) return;
-
-  if (lastCursorIndex === -1 || index < lastCursorIndex) {
-    osmd.cursor.reset();
-    lastCursorIndex = 0;
+  if (!state.osmd?.cursor || index < 0 || index === state.lastCursorIndex) {
+    return;
   }
 
-  while (lastCursorIndex < index && !osmd.cursor.Iterator.EndReached) {
-    osmd.cursor.next();
-    lastCursorIndex++;
+  if (state.lastCursorIndex === -1 || index < state.lastCursorIndex) {
+    resetCursor();
   }
-}
 
-function syncNow() {
-  const audioTime = audio.currentTime;
-  const scoreTime = audioToScoreTime(audioTime);
-
-  if (audioTimeEl) audioTimeEl.textContent = audioTime.toFixed(2);
-  if (scoreTimeEl) scoreTimeEl.textContent = scoreTime.toFixed(2);
-
-  if (tempomap.length > 0 && cursorSteps.length > 0) {
-    moveCursorTo(findNearestCursorIndex(scoreTime));
+  while (
+    state.lastCursorIndex < index &&
+    !state.osmd.cursor.Iterator.EndReached
+  ) {
+    state.osmd.cursor.next();
+    state.lastCursorIndex += 1;
   }
 }
 
-function startLoop() {
-  if (loopStarted) return;
-  loopStarted = true;
+async function ensureOsmd() {
+  if (state.osmd) {
+    return state.osmd;
+  }
+
+  state.osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(dom.score, {
+    autoResize: true,
+    drawTitle: true,
+    followCursor: false,
+  });
+
+  return state.osmd;
+}
+
+async function renderScore(scorePath) {
+  const osmd = await ensureOsmd();
+  await osmd.load(scorePath);
+  osmd.render();
+  osmd.cursor.show();
+  osmd.cursor.reset();
+}
+
+function syncUi() {
+  const audioTime = dom.audio.currentTime;
+  const scoreTime = interpolateFromMap(audioTime);
+
+  setTimes(audioTime, scoreTime);
+
+  if (state.tempomap.length === 0 || state.cursorSteps.length === 0) {
+    return;
+  }
+
+  const cursorIndex = findNearestIndex(
+    state.cursorSteps,
+    scoreTime,
+    (step) => step.scoreTime,
+  );
+
+  moveCursorTo(cursorIndex);
+}
+
+function startSyncLoop() {
+  if (state.loopStarted) {
+    return;
+  }
+
+  state.loopStarted = true;
 
   const tick = () => {
-    syncNow();
+    syncUi();
     requestAnimationFrame(tick);
   };
 
@@ -257,59 +339,57 @@ function startLoop() {
 
 async function loadSelectedSong() {
   const song = getSong();
-  if (!song) return;
+  if (!song) {
+    return;
+  }
 
   try {
-    audio.pause();
-    resetState();
+    dom.audio.pause();
+    resetAlignmentState();
 
-    audio.src = song.audio;
-    audio.load();
+    dom.audio.src = song.audio;
+    dom.audio.load();
 
-    const [rawTempomap, rawScoreBeats] = await Promise.all([
-      loadJson(song.tempomap),
-      loadJson(song.scoreBeats),
+    const [tempomapData, scoreBeatsData] = await Promise.all([
+      fetchJson(song.tempomap),
+      fetchJson(song.scoreBeats),
     ]);
 
-    tempomap = normalizeTempomap(rawTempomap);
-    const scoreStart = getFirstScoreTime(rawScoreBeats);
+    state.tempomap = normalizeTempomap(tempomapData);
 
-    if (!osmd) {
-      osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
-        autoResize: true,
-        drawTitle: true,
-        followCursor: false,
-      });
-    }
+    await renderScore(song.score);
+    buildCursorSteps(getScoreStart(scoreBeatsData));
 
-    await osmd.load(song.score);
-    osmd.render();
-    osmd.cursor.show();
-    osmd.cursor.reset();
-
-    buildCursorMap(scoreStart);
     setSongLabel();
-    syncNow();
-    startLoop();
+    syncUi();
+    startSyncLoop();
   } catch (error) {
     console.error(error);
     alert(`Nepodarilo sa načítať skladbu „${song.label}“. Skontroluj konzolu.`);
   }
 }
 
-loadBtn.addEventListener("click", loadSelectedSong);
+function attachEvents() {
+  dom.loadBtn.addEventListener("click", loadSelectedSong);
 
-songSelect.addEventListener("change", (event) => {
-  currentSongId = event.target.value;
+  dom.songSelect.addEventListener("change", (event) => {
+    state.currentSongId = event.target.value;
+    setSongLabel();
+    loadSelectedSong();
+  });
+
+  dom.playBtn.addEventListener("click", () => dom.audio.play());
+  dom.pauseBtn.addEventListener("click", () => dom.audio.pause());
+
+  dom.audio.addEventListener("loadedmetadata", syncUi);
+  dom.audio.addEventListener("seeking", syncUi);
+  dom.audio.addEventListener("seeked", syncUi);
+}
+
+function init() {
+  setSongLabel();
+  attachEvents();
   loadSelectedSong();
-});
+}
 
-playBtn.addEventListener("click", () => audio.play());
-pauseBtn.addEventListener("click", () => audio.pause());
-
-audio.addEventListener("seeking", syncNow);
-audio.addEventListener("seeked", syncNow);
-audio.addEventListener("loadedmetadata", syncNow);
-
-setSongLabel();
-loadSelectedSong();
+init();

@@ -7,30 +7,42 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Synchronizácia partitúry s nahrávkou</h1>
+    <main class="page">
+      <header class="page-header">
+        <h1>Synchronizácia partitúry s nahrávkou</h1>
+      </header>
 
-    <div class="controls">
-      <label for="songSelect"><strong>Skladba:</strong></label>
-      <select id="songSelect">
-        <option value="aka-si-mi-krasna">Aká si mi krásna</option>
-        <option value="chopin">Chopin</option>
-      </select>
-      <button id="loadBtn">Načítať vybranú skladbu</button>
-      <button id="playBtn">Play</button>
-      <button id="pauseBtn">Pause</button>
-    </div>
+      <section class="panel controls" aria-label="Ovládanie prehrávania">
+        <label for="songSelect" class="controls__label">Skladba:</label>
+        <select id="songSelect">
+          <option value="aka-si-mi-krasna">Aká si mi krásna</option>
+          <option value="chopin">Chopin</option>
+        </select>
+        <button id="loadBtn" type="button">Načítať vybranú skladbu</button>
+        <button id="playBtn" type="button">Play</button>
+        <button id="pauseBtn" type="button">Pause</button>
+      </section>
 
-    <div class="status">
-      <p><strong>Aktuálna skladba:</strong> <span id="currentSong">-</span></p>
-      <p><strong>Audio time:</strong> <span id="audioTime">0.00</span> s</p>
-      <p><strong>Score time:</strong> <span id="scoreTime">0.00</span> beats</p>
-    </div>
+      <section class="panel status" aria-label="Stav synchronizácie">
+        <p>
+          <strong>Aktuálna skladba:</strong> <span id="currentSong">-</span>
+        </p>
+        <p><strong>Audio time:</strong> <span id="audioTime">0.00</span> s</p>
+        <p>
+          <strong>Score time:</strong> <span id="scoreTime">0.00</span> beats
+        </p>
+      </section>
 
-    <audio id="audio" controls>
-      Tvoj prehliadač nepodporuje audio element.
-    </audio>
+      <audio id="audio" controls>
+        Tvoj prehliadač nepodporuje audio element.
+      </audio>
 
-    <div id="score"></div>
+      <section
+        id="score"
+        class="panel score-panel"
+        aria-label="Notový zápis"
+      ></section>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdisplay.min.js"></script>
     <script type="module" src="app.js"></script>

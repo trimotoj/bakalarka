@@ -38,7 +38,7 @@ from src.visualization import (
 
 
 SCORE_PATH = Path("data/score/aka-si-mi-krasna.musicxml")
-AUDIO_PATH = Path("data/audio/aka-si-mi-krasna.wav")
+AUDIO_PATH = Path("data/audio/aka-si-mi-krasna_transposed.wav")
 OUTPUT_DIR = Path("data/output")
 PLOTS_DIR = OUTPUT_DIR / "plots"
 

@@ -5,6 +5,7 @@ const dom = {
   loadBtn: $("loadBtn"),
   playBtn: $("playBtn"),
   pauseBtn: $("pauseBtn"),
+  stopBtn: $("stopBtn"),
   songSelect: $("songSelect"),
   currentSong: $("currentSong"),
   audioTime: $("audioTime"),
@@ -48,14 +49,14 @@ function getSong() {
 
 function setSongLabel() {
   const song = getSong();
-  if (song) {
+  if (song && dom.currentSong) {
     dom.currentSong.textContent = song.label;
   }
 }
 
 function setTimes(audioTime = 0, scoreTime = 0) {
-  dom.audioTime.textContent = audioTime.toFixed(2);
-  dom.scoreTime.textContent = scoreTime.toFixed(2);
+  if (dom.audioTime) dom.audioTime.textContent = audioTime.toFixed(2);
+  if (dom.scoreTime) dom.scoreTime.textContent = scoreTime.toFixed(2);
 }
 
 function resetAlignmentState() {
@@ -190,9 +191,12 @@ function interpolateFromMap(audioTime) {
   const left = points[rightIndex - 1];
   const right = points[rightIndex];
 
-  const ratio =
-    (audioTime - left.audio_time) / (right.audio_time - left.audio_time);
+  const duration = right.audio_time - left.audio_time;
+  if (duration <= 0) {
+    return left.score_time;
+  }
 
+  const ratio = (audioTime - left.audio_time) / duration;
   return left.score_time + ratio * (right.score_time - left.score_time);
 }
 
@@ -219,7 +223,11 @@ function getCursorTimestamp() {
 }
 
 function resetCursor() {
-  state.osmd?.cursor?.reset();
+  if (!state.osmd?.cursor) {
+    return;
+  }
+
+  state.osmd.cursor.reset();
   state.lastCursorIndex = 0;
 }
 
@@ -272,10 +280,7 @@ function moveCursorTo(index) {
     resetCursor();
   }
 
-  while (
-    state.lastCursorIndex < index &&
-    !state.osmd.cursor.Iterator.EndReached
-  ) {
+  while (state.lastCursorIndex < index && !state.osmd.cursor.Iterator.EndReached) {
     state.osmd.cursor.next();
     state.lastCursorIndex += 1;
   }
@@ -304,7 +309,11 @@ async function renderScore(scorePath) {
 }
 
 function syncUi() {
-  const audioTime = dom.audio.currentTime;
+  if (!dom.audio) {
+    return;
+  }
+
+  const audioTime = dom.audio.currentTime || 0;
   const scoreTime = interpolateFromMap(audioTime);
 
   setTimes(audioTime, scoreTime);
@@ -337,9 +346,19 @@ function startSyncLoop() {
   requestAnimationFrame(tick);
 }
 
+function stopAudio() {
+  if (!dom.audio) {
+    return;
+  }
+
+  dom.audio.pause();
+  dom.audio.currentTime = 0;
+  syncUi();
+}
+
 async function loadSelectedSong() {
   const song = getSong();
-  if (!song) {
+  if (!song || !dom.audio) {
     return;
   }
 
@@ -365,25 +384,38 @@ async function loadSelectedSong() {
     startSyncLoop();
   } catch (error) {
     console.error(error);
-    alert(`Nepodarilo sa načítať skladbu „${song.label}“. Skontroluj konzolu.`);
+    alert(`Nepodarilo sa načítať skladbu „${song?.label ?? ""}“. Skontroluj konzolu.`);
   }
 }
 
 function attachEvents() {
-  dom.loadBtn.addEventListener("click", loadSelectedSong);
+  dom.loadBtn?.addEventListener("click", loadSelectedSong);
 
-  dom.songSelect.addEventListener("change", (event) => {
+  dom.songSelect?.addEventListener("change", (event) => {
     state.currentSongId = event.target.value;
     setSongLabel();
     loadSelectedSong();
   });
 
-  dom.playBtn.addEventListener("click", () => dom.audio.play());
-  dom.pauseBtn.addEventListener("click", () => dom.audio.pause());
+  dom.playBtn?.addEventListener("click", async () => {
+    try {
+      await dom.audio?.play();
+    } catch (error) {
+      console.error("Nepodarilo sa spustiť prehrávanie:", error);
+    }
+  });
 
-  dom.audio.addEventListener("loadedmetadata", syncUi);
-  dom.audio.addEventListener("seeking", syncUi);
-  dom.audio.addEventListener("seeked", syncUi);
+  dom.pauseBtn?.addEventListener("click", () => {
+    dom.audio?.pause();
+  });
+
+  dom.stopBtn?.addEventListener("click", stopAudio);
+
+  dom.audio?.addEventListener("loadedmetadata", syncUi);
+  dom.audio?.addEventListener("timeupdate", syncUi);
+  dom.audio?.addEventListener("seeking", syncUi);
+  dom.audio?.addEventListener("seeked", syncUi);
+  dom.audio?.addEventListener("ended", syncUi);
 }
 
 function init() {

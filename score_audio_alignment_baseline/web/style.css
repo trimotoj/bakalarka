@@ -3,6 +3,7 @@
   --panel-bg: #ffffff;
   --page-bg: #f6f8fa;
   --text: #1f2328;
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -19,11 +20,19 @@ body {
 .page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 20px 20px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20px 0 12px;
+  background: var(--page-bg);
 }
 
 .page-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 h1 {
@@ -31,11 +40,12 @@ h1 {
 }
 
 .panel {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--panel-bg);
+  box-shadow: var(--shadow);
 }
 
 .controls {
@@ -60,20 +70,46 @@ button {
   cursor: pointer;
 }
 
-.status p {
-  margin: 0 0 8px;
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.status p:last-child {
-  margin-bottom: 0;
+.status p {
+  margin: 0;
+}
+
+.audio-panel {
+  display: flex;
+  align-items: center;
 }
 
 #audio {
   width: 100%;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .score-panel {
   min-height: 400px;
   overflow-x: auto;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 0 12px 12px;
+  }
+
+  .topbar {
+    padding: 12px 0 8px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .status {
+    flex-direction: column;
+    gap: 8px;
+  }
 }

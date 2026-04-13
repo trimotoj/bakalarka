@@ -12,9 +12,7 @@ from src.dtw_alignment import dtw, dtw_reverse
 from src.io_utils import (
     load_audio,
     load_score,
-    save_path_csv,
     save_score_beats_json,
-    save_tempomap_csv,
 )
 from src.score_features import (
     build_score_time_grid,
@@ -37,8 +35,8 @@ from src.visualization import (
 )
 
 
-SCORE_PATH = Path("data/score/aka-si-mi-krasna.musicxml")
-AUDIO_PATH = Path("data/audio/aka-si-mi-krasna_transposed.wav")
+SCORE_PATH = Path("data/score/chopin.musicxml")
+AUDIO_PATH = Path("data/audio/chopin.wav")
 OUTPUT_DIR = Path("data/output")
 PLOTS_DIR = OUTPUT_DIR / "plots"
 
@@ -52,11 +50,7 @@ DTW_MODE = "all"  # "forward" | "reverse" | "all"
 
 
 def get_piece_name(score_path: Path, audio_path: Path) -> str:
-    return (
-        score_path.stem
-        if score_path.stem == audio_path.stem
-        else (score_path.stem or audio_path.stem)
-    )
+    return audio_path.stem or score_path.stem
 
 
 def build_output_paths(piece_name: str) -> dict[str, object]:
@@ -70,8 +64,6 @@ def build_output_paths(piece_name: str) -> dict[str, object]:
     variants = {}
     for name, suffix in {"forward": "", "reverse": "_reverse"}.items():
         variants[name] = {
-            "tempomap_csv": OUTPUT_DIR / f"{piece_name}_tempomap{suffix}.csv",
-            "path_csv": OUTPUT_DIR / f"{piece_name}_path{suffix}.csv",
             "tempomap_json": OUTPUT_DIR / f"{piece_name}_tempomap{suffix}.json",
             "cost_plot": PLOTS_DIR / f"{piece_name}_cost_matrix_with_path{suffix}.png",
             "tempomap_plot": PLOTS_DIR / f"{piece_name}_tempomap{suffix}.png",
@@ -128,8 +120,6 @@ def save_variant_outputs(
 ) -> None:
     paths = output_paths["variants"][variant]
 
-    save_tempomap_csv(paths["tempomap_csv"], tempomap)
-    save_path_csv(paths["path_csv"], path)
     export_tempomap_json(tempomap, paths["tempomap_json"])
 
     plot_cost_matrix_with_path(

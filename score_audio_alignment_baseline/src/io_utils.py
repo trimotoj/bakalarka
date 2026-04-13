@@ -23,25 +23,6 @@ def load_audio(path: str | Path, sr: int = 22050) -> tuple[np.ndarray, int]:
     return y, sr
 
 
-def save_tempomap_csv(path: str | Path, tempomap: np.ndarray) -> None:
-    path = _ensure_parent(path)
-    np.savetxt(
-        path, tempomap, delimiter=",", header="score_time,audio_time", comments=""
-    )
-
-
-def save_path_csv(path: str | Path, path_points: np.ndarray) -> None:
-    path = _ensure_parent(path)
-    np.savetxt(
-        path,
-        path_points,
-        delimiter=",",
-        header="score_frame,audio_frame",
-        comments="",
-        fmt="%d",
-    )
-
-
 def save_score_beats_json(path: str | Path, note_array: np.ndarray) -> None:
     path = _ensure_parent(path)
     unique_onsets = np.unique(note_array["onset_beat"].astype(float))

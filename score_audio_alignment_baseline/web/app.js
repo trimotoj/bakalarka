@@ -1,3 +1,4 @@
+// app.js
 const $ = (id) => document.getElementById(id);
 
 const dom = {
@@ -28,14 +29,30 @@ const SONGS = {
     tempomap: "data/alignment/chopin_tempomap.json",
     scoreBeats: "data/alignment/chopin_score_beats.json",
   },
+  misatango_kyrie: {
+    label: "Kyrie",
+    audio: "data/audio/misatango-kyrie.wav",
+    score: "data/score/misatango-kyrie.musicxml",
+    tempomap: "data/alignment/misatango-kyrie_tempomap.json",
+    scoreBeats: "data/alignment/misatango-kyrie_score_beats.json",
+  },
+  misatango_gloria: {
+    label: "Gloria",
+    audio: "data/audio/misatango-gloria.wav",
+    score: "data/score/misatango-gloria.musicxml",
+    tempomap: "data/alignment/misatango-gloria_tempomap.json",
+    scoreBeats: "data/alignment/misatango-gloria_score_beats.json",
+  },
 };
 
 const SCORE_SCALE = 4;
 const MAX_CURSOR_STEPS = 200000;
 const EPS = 1e-9;
 
+const songIds = Object.keys(SONGS);
+
 const state = {
-  currentSongId: dom.songSelect?.value || Object.keys(SONGS)[0],
+  currentSongId: songIds[0] ?? null,
   osmd: null,
   tempomap: [],
   cursorSteps: [],
@@ -44,7 +61,26 @@ const state = {
 };
 
 function getSong() {
-  return SONGS[state.currentSongId];
+  return state.currentSongId ? SONGS[state.currentSongId] : null;
+}
+
+function populateSongSelect() {
+  if (!dom.songSelect) {
+    return;
+  }
+
+  dom.songSelect.innerHTML = "";
+
+  for (const [id, song] of Object.entries(SONGS)) {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = song.label;
+    dom.songSelect.appendChild(option);
+  }
+
+  if (state.currentSongId && SONGS[state.currentSongId]) {
+    dom.songSelect.value = state.currentSongId;
+  }
 }
 
 function setSongLabel() {
@@ -419,6 +455,7 @@ function attachEvents() {
 }
 
 function init() {
+  populateSongSelect();
   setSongLabel();
   attachEvents();
   loadSelectedSong();

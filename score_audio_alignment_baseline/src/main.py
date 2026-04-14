@@ -35,8 +35,8 @@ from src.visualization import (
 )
 
 
-SCORE_PATH = Path("data/score/chopin.musicxml")
-AUDIO_PATH = Path("data/audio/chopin.wav")
+SCORE_PATH = Path("data/score/misatango-kyrie.musicxml")
+AUDIO_PATH = Path("data/audio/misatango-kyrie.wav")
 OUTPUT_DIR = Path("data/output")
 PLOTS_DIR = OUTPUT_DIR / "plots"
 
@@ -46,7 +46,7 @@ SCORE_FPS = 40
 SMOOTH_WINDOW = 9
 SHOW_PLOTS = True
 
-DTW_MODE = "all"  # "forward" | "reverse" | "all"
+DTW_MODE = "forward"  # "forward" | "reverse" | "all"
 
 
 def get_piece_name(score_path: Path, audio_path: Path) -> str:

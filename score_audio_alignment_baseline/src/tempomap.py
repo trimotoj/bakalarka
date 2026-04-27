@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -47,3 +48,14 @@ def export_tempomap_json(tempomap: np.ndarray, out_path: str | Path) -> None:
 
     with open(out_path, "w", encoding="utf-8") as handle:
         json.dump(data, handle, ensure_ascii=False, indent=2)
+
+
+def export_path_csv(path: np.ndarray, out_path: str | Path) -> None:
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(out_path, "w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path_idx", "score_frame_idx", "audio_frame_idx"])
+        for path_idx, (score_frame_idx, audio_frame_idx) in enumerate(path):
+            writer.writerow([path_idx, int(score_frame_idx), int(audio_frame_idx)])

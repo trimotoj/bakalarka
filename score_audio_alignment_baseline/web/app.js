@@ -1,4 +1,3 @@
-// app.js
 const $ = (id) => document.getElementById(id);
 
 const dom = {
@@ -42,6 +41,13 @@ const SONGS = {
     score: "data/score/misatango-gloria.musicxml",
     tempomap: "data/alignment/misatango-gloria_tempomap.json",
     scoreBeats: "data/alignment/misatango-gloria_score_beats.json",
+  },
+  palenocka: {
+    label: "Palenocka",
+    audio: "data/audio/palenocka.wav",
+    score: "data/score/palenocka.musicxml",
+    tempomap: "data/alignment/palenocka_tempomap.json",
+    scoreBeats: "data/alignment/palenocka_score_beats.json",
   },
 };
 
@@ -392,6 +398,15 @@ function stopAudio() {
   syncUi();
 }
 
+function setupAudioControls() {
+  if (!dom.audio) {
+    return;
+  }
+
+  dom.audio.controls = true;
+  dom.audio.preload = "metadata";
+}
+
 async function loadSelectedSong() {
   const song = getSong();
   if (!song || !dom.audio) {
@@ -455,6 +470,7 @@ function attachEvents() {
 }
 
 function init() {
+  setupAudioControls();
   populateSongSelect();
   setSongLabel();
   attachEvents();

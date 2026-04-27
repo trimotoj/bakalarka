@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 
-
 DTW_STEPS = [(-1, -1), (-1, 0), (0, -1)]
 
 
@@ -34,7 +33,6 @@ def _accumulate_cost(cost: np.ndarray) -> np.ndarray:
 
 
 def backtrack_path(acc: np.ndarray) -> np.ndarray:
-    """Recover the optimal DTW path from an accumulated cost matrix."""
     i = acc.shape[0] - 1
     j = acc.shape[1] - 1
     path = [(i, j)]
@@ -56,21 +54,6 @@ def backtrack_path(acc: np.ndarray) -> np.ndarray:
 
 
 def dtw(cost: np.ndarray) -> np.ndarray:
-    """Compute the forward DTW path."""
     _validate_cost(cost)
     acc = _accumulate_cost(cost)
     return backtrack_path(acc)
-
-
-def dtw_reverse(cost: np.ndarray) -> np.ndarray:
-    """Compute a DTW path by running DTW on the reversed cost matrix."""
-    _validate_cost(cost)
-    n_rows, n_cols = cost.shape
-
-    reversed_cost = np.flip(cost, axis=(0, 1))
-    reversed_path = dtw(reversed_cost)
-
-    path = reversed_path.copy()
-    path[:, 0] = n_rows - 1 - path[:, 0]
-    path[:, 1] = n_cols - 1 - path[:, 1]
-    return path[::-1]

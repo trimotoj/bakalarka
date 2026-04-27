@@ -205,3 +205,83 @@ def plot_paths_side_by_side(
 
     fig.tight_layout()
     _finish_figure(fig, save_path, show)
+
+
+def plot_local_cost_matrix_with_path(
+    cost: np.ndarray,
+    path: np.ndarray,
+    score_times: np.ndarray,
+    audio_times: np.ndarray,
+    score_min: float,
+    score_max: float,
+    audio_min: float,
+    audio_max: float,
+    save_path: str | Path | None = None,
+    show: bool = True,
+    title: str = "Local cost matrix with DTW path",
+) -> None:
+    score_mask = (score_times >= score_min) & (score_times <= score_max)
+    audio_mask = (audio_times >= audio_min) & (audio_times <= audio_max)
+
+    score_idx = np.flatnonzero(score_mask)
+    audio_idx = np.flatnonzero(audio_mask)
+
+    if len(score_idx) == 0 or len(audio_idx) == 0:
+        raise ValueError("Selected local window is empty.")
+
+    s0, s1 = score_idx[0], score_idx[-1]
+    a0, a1 = audio_idx[0], audio_idx[-1]
+
+    local_cost = cost[s0 : s1 + 1, a0 : a1 + 1]
+
+    local_path = []
+    for si, ai in path:
+        if s0 <= si <= s1 and a0 <= ai <= a1:
+            local_path.append((si - s0, ai - a0))
+
+    local_path = (
+        np.asarray(local_path, dtype=int) if local_path else np.empty((0, 2), dtype=int)
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    extent = [
+        float(score_times[s0]),
+        float(score_times[s1]),
+        float(audio_times[a0]),
+        float(audio_times[a1]),
+    ]
+
+    image = ax.imshow(
+        local_cost.T,
+        origin="lower",
+        aspect="auto",
+        interpolation="nearest",
+        extent=extent,
+    )
+
+    if len(local_path) > 0:
+        path_score_times = score_times[s0 : s1 + 1][local_path[:, 0]]
+        path_audio_times = audio_times[a0 : a1 + 1][local_path[:, 1]]
+        ax.plot(
+            path_score_times,
+            path_audio_times,
+            color="white",
+            linewidth=3.2,
+            alpha=0.95,
+            zorder=3,
+        )
+        ax.plot(
+            path_score_times,
+            path_audio_times,
+            color="red",
+            linewidth=1.8,
+            alpha=1.0,
+            zorder=4,
+        )
+
+    ax.set_xlabel("Score time [beats]")
+    ax.set_ylabel("Audio time [s]")
+    ax.set_title(title)
+    fig.colorbar(image, ax=ax)
+    fig.tight_layout()
+    _finish_figure(fig, save_path, show)

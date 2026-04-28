@@ -171,10 +171,41 @@ def plot_tempomap(
     title: str = "Tempomap",
 ) -> None:
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(tempomap[:, 0], tempomap[:, 1], color="red", linewidth=1.8)
+    ax.plot(tempomap[:, 0], tempomap[:, 1], linewidth=1.8)
     ax.set_xlabel("Score beat")
     ax.set_ylabel("Audio time [s]")
     ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    _finish_figure(fig, save_path, show)
+
+
+def plot_tempomap_comparison(
+    tempomap_raw: np.ndarray,
+    tempomap_smooth: np.ndarray,
+    save_path: str | Path | None = None,
+    show: bool = True,
+    title: str = "Raw vs. smoothed tempomap",
+) -> None:
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot(
+        tempomap_raw[:, 0],
+        tempomap_raw[:, 1],
+        linewidth=1.0,
+        alpha=0.45,
+        label="Raw tempomap",
+    )
+    ax.plot(
+        tempomap_smooth[:, 0],
+        tempomap_smooth[:, 1],
+        linewidth=2.0,
+        label="Smoothed tempomap",
+    )
+    ax.set_xlabel("Score beat")
+    ax.set_ylabel("Audio time [s]")
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    ax.legend()
     fig.tight_layout()
     _finish_figure(fig, save_path, show)
 

@@ -1,0 +1,812 @@
+[
+  {
+    "score_time": 6.0
+  },
+  {
+    "score_time": 8.0
+  },
+  {
+    "score_time": 9.0
+  },
+  {
+    "score_time": 9.5
+  },
+  {
+    "score_time": 10.0
+  },
+  {
+    "score_time": 12.0
+  },
+  {
+    "score_time": 12.666666984558105
+  },
+  {
+    "score_time": 13.333333015441895
+  },
+  {
+    "score_time": 14.0
+  },
+  {
+    "score_time": 16.0
+  },
+  {
+    "score_time": 17.0
+  },
+  {
+    "score_time": 17.5
+  },
+  {
+    "score_time": 18.0
+  },
+  {
+    "score_time": 20.0
+  },
+  {
+    "score_time": 20.66666603088379
+  },
+  {
+    "score_time": 21.33333396911621
+  },
+  {
+    "score_time": 22.0
+  },
+  {
+    "score_time": 22.66666603088379
+  },
+  {
+    "score_time": 23.33333396911621
+  },
+  {
+    "score_time": 24.0
+  },
+  {
+    "score_time": 25.0
+  },
+  {
+    "score_time": 25.5
+  },
+  {
+    "score_time": 26.0
+  },
+  {
+    "score_time": 27.0
+  },
+  {
+    "score_time": 28.0
+  },
+  {
+    "score_time": 28.66666603088379
+  },
+  {
+    "score_time": 29.33333396911621
+  },
+  {
+    "score_time": 30.0
+  },
+  {
+    "score_time": 30.66666603088379
+  },
+  {
+    "score_time": 31.33333396911621
+  },
+  {
+    "score_time": 32.0
+  },
+  {
+    "score_time": 33.0
+  },
+  {
+    "score_time": 33.5
+  },
+  {
+    "score_time": 34.0
+  },
+  {
+    "score_time": 34.5
+  },
+  {
+    "score_time": 35.0
+  },
+  {
+    "score_time": 36.0
+  },
+  {
+    "score_time": 36.66666793823242
+  },
+  {
+    "score_time": 37.33333206176758
+  },
+  {
+    "score_time": 38.0
+  },
+  {
+    "score_time": 38.66666793823242
+  },
+  {
+    "score_time": 39.33333206176758
+  },
+  {
+    "score_time": 40.0
+  },
+  {
+    "score_time": 41.0
+  },
+  {
+    "score_time": 41.5
+  },
+  {
+    "score_time": 42.0
+  },
+  {
+    "score_time": 42.5
+  },
+  {
+    "score_time": 43.0
+  },
+  {
+    "score_time": 44.0
+  },
+  {
+    "score_time": 44.66666793823242
+  },
+  {
+    "score_time": 45.33333206176758
+  },
+  {
+    "score_time": 46.0
+  },
+  {
+    "score_time": 47.0
+  },
+  {
+    "score_time": 48.0
+  },
+  {
+    "score_time": 49.0
+  },
+  {
+    "score_time": 49.5
+  },
+  {
+    "score_time": 50.0
+  },
+  {
+    "score_time": 52.0
+  },
+  {
+    "score_time": 52.66666793823242
+  },
+  {
+    "score_time": 53.33333206176758
+  },
+  {
+    "score_time": 54.0
+  },
+  {
+    "score_time": 56.0
+  },
+  {
+    "score_time": 57.0
+  },
+  {
+    "score_time": 57.5
+  },
+  {
+    "score_time": 58.0
+  },
+  {
+    "score_time": 60.0
+  },
+  {
+    "score_time": 60.66666793823242
+  },
+  {
+    "score_time": 61.33333206176758
+  },
+  {
+    "score_time": 62.0
+  },
+  {
+    "score_time": 62.66666793823242
+  },
+  {
+    "score_time": 63.33333206176758
+  },
+  {
+    "score_time": 64.0
+  },
+  {
+    "score_time": 65.0
+  },
+  {
+    "score_time": 65.5
+  },
+  {
+    "score_time": 66.0
+  },
+  {
+    "score_time": 67.0
+  },
+  {
+    "score_time": 68.0
+  },
+  {
+    "score_time": 68.66666412353516
+  },
+  {
+    "score_time": 69.33333587646484
+  },
+  {
+    "score_time": 70.0
+  },
+  {
+    "score_time": 70.66666412353516
+  },
+  {
+    "score_time": 71.33333587646484
+  },
+  {
+    "score_time": 72.0
+  },
+  {
+    "score_time": 73.0
+  },
+  {
+    "score_time": 73.5
+  },
+  {
+    "score_time": 74.0
+  },
+  {
+    "score_time": 74.5
+  },
+  {
+    "score_time": 75.0
+  },
+  {
+    "score_time": 76.0
+  },
+  {
+    "score_time": 76.66666412353516
+  },
+  {
+    "score_time": 77.33333587646484
+  },
+  {
+    "score_time": 78.0
+  },
+  {
+    "score_time": 79.0
+  },
+  {
+    "score_time": 80.0
+  },
+  {
+    "score_time": 80.5
+  },
+  {
+    "score_time": 81.0
+  },
+  {
+    "score_time": 81.5
+  },
+  {
+    "score_time": 82.0
+  },
+  {
+    "score_time": 82.66666412353516
+  },
+  {
+    "score_time": 83.33333587646484
+  },
+  {
+    "score_time": 84.0
+  },
+  {
+    "score_time": 84.66666412353516
+  },
+  {
+    "score_time": 85.0
+  },
+  {
+    "score_time": 85.33333587646484
+  },
+  {
+    "score_time": 86.0
+  },
+  {
+    "score_time": 87.0
+  },
+  {
+    "score_time": 88.0
+  },
+  {
+    "score_time": 89.0
+  },
+  {
+    "score_time": 89.5
+  },
+  {
+    "score_time": 90.0
+  },
+  {
+    "score_time": 93.0
+  },
+  {
+    "score_time": 93.66666412353516
+  },
+  {
+    "score_time": 94.33333587646484
+  },
+  {
+    "score_time": 95.0
+  },
+  {
+    "score_time": 95.66666412353516
+  },
+  {
+    "score_time": 96.33333587646484
+  },
+  {
+    "score_time": 97.0
+  },
+  {
+    "score_time": 98.0
+  },
+  {
+    "score_time": 98.5
+  },
+  {
+    "score_time": 99.0
+  },
+  {
+    "score_time": 100.0
+  },
+  {
+    "score_time": 100.5
+  },
+  {
+    "score_time": 101.0
+  },
+  {
+    "score_time": 101.66666412353516
+  },
+  {
+    "score_time": 102.33333587646484
+  },
+  {
+    "score_time": 103.0
+  },
+  {
+    "score_time": 103.66666412353516
+  },
+  {
+    "score_time": 104.33333587646484
+  },
+  {
+    "score_time": 105.0
+  },
+  {
+    "score_time": 106.0
+  },
+  {
+    "score_time": 106.5
+  },
+  {
+    "score_time": 107.0
+  },
+  {
+    "score_time": 107.5
+  },
+  {
+    "score_time": 108.0
+  },
+  {
+    "score_time": 109.0
+  },
+  {
+    "score_time": 109.66666412353516
+  },
+  {
+    "score_time": 110.33333587646484
+  },
+  {
+    "score_time": 111.0
+  },
+  {
+    "score_time": 111.5
+  },
+  {
+    "score_time": 112.0
+  },
+  {
+    "score_time": 113.0
+  },
+  {
+    "score_time": 113.5
+  },
+  {
+    "score_time": 114.0
+  },
+  {
+    "score_time": 115.0
+  },
+  {
+    "score_time": 115.66666412353516
+  },
+  {
+    "score_time": 116.33333587646484
+  },
+  {
+    "score_time": 117.0
+  },
+  {
+    "score_time": 117.66666412353516
+  },
+  {
+    "score_time": 118.33333587646484
+  },
+  {
+    "score_time": 119.0
+  },
+  {
+    "score_time": 120.0
+  },
+  {
+    "score_time": 121.0
+  },
+  {
+    "score_time": 125.0
+  },
+  {
+    "score_time": 127.0
+  },
+  {
+    "score_time": 127.66666412353516
+  },
+  {
+    "score_time": 128.3333282470703
+  },
+  {
+    "score_time": 129.0
+  },
+  {
+    "score_time": 130.0
+  },
+  {
+    "score_time": 131.0
+  },
+  {
+    "score_time": 132.0
+  },
+  {
+    "score_time": 133.0
+  },
+  {
+    "score_time": 135.0
+  },
+  {
+    "score_time": 135.6666717529297
+  },
+  {
+    "score_time": 136.3333282470703
+  },
+  {
+    "score_time": 137.0
+  },
+  {
+    "score_time": 138.0
+  },
+  {
+    "score_time": 139.0
+  },
+  {
+    "score_time": 139.5
+  },
+  {
+    "score_time": 140.0
+  },
+  {
+    "score_time": 141.0
+  },
+  {
+    "score_time": 141.6666717529297
+  },
+  {
+    "score_time": 142.3333282470703
+  },
+  {
+    "score_time": 143.0
+  },
+  {
+    "score_time": 144.0
+  },
+  {
+    "score_time": 145.0
+  },
+  {
+    "score_time": 145.5
+  },
+  {
+    "score_time": 146.0
+  },
+  {
+    "score_time": 151.0
+  },
+  {
+    "score_time": 152.3333282470703
+  },
+  {
+    "score_time": 153.6666717529297
+  },
+  {
+    "score_time": 155.0
+  },
+  {
+    "score_time": 157.0
+  },
+  {
+    "score_time": 159.0
+  },
+  {
+    "score_time": 161.0
+  },
+  {
+    "score_time": 163.0
+  },
+  {
+    "score_time": 165.0
+  },
+  {
+    "score_time": 166.0
+  },
+  {
+    "score_time": 166.5
+  },
+  {
+    "score_time": 167.0
+  },
+  {
+    "score_time": 169.0
+  },
+  {
+    "score_time": 169.6666717529297
+  },
+  {
+    "score_time": 170.3333282470703
+  },
+  {
+    "score_time": 171.0
+  },
+  {
+    "score_time": 172.3333282470703
+  },
+  {
+    "score_time": 173.0
+  },
+  {
+    "score_time": 173.6666717529297
+  },
+  {
+    "score_time": 174.0
+  },
+  {
+    "score_time": 174.5
+  },
+  {
+    "score_time": 175.0
+  },
+  {
+    "score_time": 176.3333282470703
+  },
+  {
+    "score_time": 177.0
+  },
+  {
+    "score_time": 177.6666717529297
+  },
+  {
+    "score_time": 178.3333282470703
+  },
+  {
+    "score_time": 179.0
+  },
+  {
+    "score_time": 181.0
+  },
+  {
+    "score_time": 182.0
+  },
+  {
+    "score_time": 182.5
+  },
+  {
+    "score_time": 183.0
+  },
+  {
+    "score_time": 185.0
+  },
+  {
+    "score_time": 185.6666717529297
+  },
+  {
+    "score_time": 186.3333282470703
+  },
+  {
+    "score_time": 187.0
+  },
+  {
+    "score_time": 188.3333282470703
+  },
+  {
+    "score_time": 189.0
+  },
+  {
+    "score_time": 189.6666717529297
+  },
+  {
+    "score_time": 190.0
+  },
+  {
+    "score_time": 190.5
+  },
+  {
+    "score_time": 191.0
+  },
+  {
+    "score_time": 193.0
+  },
+  {
+    "score_time": 193.6666717529297
+  },
+  {
+    "score_time": 194.3333282470703
+  },
+  {
+    "score_time": 195.0
+  },
+  {
+    "score_time": 196.0
+  },
+  {
+    "score_time": 197.0
+  },
+  {
+    "score_time": 198.0
+  },
+  {
+    "score_time": 198.5
+  },
+  {
+    "score_time": 199.0
+  },
+  {
+    "score_time": 200.3333282470703
+  },
+  {
+    "score_time": 201.0
+  },
+  {
+    "score_time": 201.6666717529297
+  },
+  {
+    "score_time": 202.3333282470703
+  },
+  {
+    "score_time": 203.0
+  },
+  {
+    "score_time": 204.0
+  },
+  {
+    "score_time": 205.0
+  },
+  {
+    "score_time": 206.0
+  },
+  {
+    "score_time": 206.5
+  },
+  {
+    "score_time": 207.0
+  },
+  {
+    "score_time": 208.0
+  },
+  {
+    "score_time": 209.0
+  },
+  {
+    "score_time": 209.6666717529297
+  },
+  {
+    "score_time": 210.3333282470703
+  },
+  {
+    "score_time": 211.0
+  },
+  {
+    "score_time": 212.3333282470703
+  },
+  {
+    "score_time": 213.0
+  },
+  {
+    "score_time": 213.6666717529297
+  },
+  {
+    "score_time": 214.0
+  },
+  {
+    "score_time": 214.5
+  },
+  {
+    "score_time": 215.0
+  },
+  {
+    "score_time": 216.0
+  },
+  {
+    "score_time": 217.0
+  },
+  {
+    "score_time": 217.6666717529297
+  },
+  {
+    "score_time": 218.0
+  },
+  {
+    "score_time": 218.3333282470703
+  },
+  {
+    "score_time": 219.0
+  },
+  {
+    "score_time": 221.0
+  },
+  {
+    "score_time": 222.0
+  },
+  {
+    "score_time": 222.5
+  },
+  {
+    "score_time": 223.0
+  },
+  {
+    "score_time": 225.0
+  },
+  {
+    "score_time": 225.6666717529297
+  },
+  {
+    "score_time": 226.3333282470703
+  },
+  {
+    "score_time": 227.0
+  },
+  {
+    "score_time": 229.0
+  },
+  {
+    "score_time": 230.0
+  },
+  {
+    "score_time": 230.5
+  },
+  {
+    "score_time": 231.0
+  },
+  {
+    "score_time": 233.0
+  },
+  {
+    "score_time": 234.0
+  },
+  {
+    "score_time": 234.5
+  },
+  {
+    "score_time": 235.0
+  }
+]

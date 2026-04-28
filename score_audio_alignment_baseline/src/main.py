@@ -35,12 +35,13 @@ from src.visualization import (
     plot_cost_matrix_with_path,
     plot_local_cost_matrix_with_path,
     plot_tempomap,
+    plot_tempomap_comparison,
     warp_score_chroma_to_audio_time,
 )
 
 
-SCORE_PATH = Path("data/score/misatango-gloria.musicxml")
-AUDIO_PATH = Path("data/audio/misatango-gloria.wav")
+SCORE_PATH = Path("data/score/aka-si-mi-krasna.musicxml")
+AUDIO_PATH = Path("data/audio/aka-si-mi-krasna_transposed.wav")
 OUTPUT_DIR = Path("data/output")
 
 AUDIO_SR = 22050
@@ -73,6 +74,8 @@ def build_output_paths(piece_name: str) -> dict[str, Path]:
         "audio_chroma_plot": plots_dir / "audio_chroma.png",
         "cost_plot": plots_dir / "cost_matrix_with_path.png",
         "tempomap_plot": plots_dir / "tempomap.png",
+        "tempomap_raw_plot": plots_dir / "tempomap_raw.png",
+        "tempomap_comparison_plot": plots_dir / "tempomap_raw_vs_smooth.png",
         "aligned_plot": plots_dir / "aligned_chromas.png",
         "local_cost_plot": plots_dir / "local_cost_beat2.png",
     }
@@ -204,10 +207,23 @@ def main() -> None:
         title="Cost matrix with DTW path",
     )
     plot_tempomap(
+        tempomap_raw,
+        save_path=output_paths["tempomap_raw_plot"],
+        show=SHOW_PLOTS,
+        title="Raw tempomap",
+    )
+    plot_tempomap(
         tempomap_smooth,
         save_path=output_paths["tempomap_plot"],
         show=SHOW_PLOTS,
-        title="Tempomap",
+        title="Smoothed tempomap",
+    )
+    plot_tempomap_comparison(
+        tempomap_raw,
+        tempomap_smooth,
+        save_path=output_paths["tempomap_comparison_plot"],
+        show=SHOW_PLOTS,
+        title="Raw vs. smoothed tempomap",
     )
     plot_aligned_chromas(
         warped_score_chroma,
@@ -258,6 +274,9 @@ def main() -> None:
     print(f"smooth tempomap shape: {tempomap_smooth.shape}")
     print(f"score beats json: {output_paths['score_beats_json']}")
     print(f"path csv: {output_paths['path_csv']}")
+    print(f"raw tempomap plot: {output_paths['tempomap_raw_plot']}")
+    print(f"smooth tempomap plot: {output_paths['tempomap_plot']}")
+    print(f"raw vs smooth tempomap plot: {output_paths['tempomap_comparison_plot']}")
     print(f"raw tempomap json: {output_paths['tempomap_raw_json']}")
     print(f"smooth tempomap json: {output_paths['tempomap_smooth_json']}")
     print("analysis bundle files:")

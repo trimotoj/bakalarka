@@ -11,6 +11,7 @@ const dom = {
   audioTime: $("audioTime"),
   scoreTime: $("scoreTime"),
   score: $("score"),
+  topbar: document.querySelector(".topbar"),
 };
 
 const SONGS = {
@@ -42,12 +43,26 @@ const SONGS = {
     tempomap: "data/alignment/misatango-gloria_tempomap.json",
     scoreBeats: "data/alignment/misatango-gloria_score_beats.json",
   },
+  palenocka_live: {
+    label: "Palenocka-live",
+    audio: "data/audio/palenocka_live.wav",
+    score: "data/score/palenocka.musicxml",
+    tempomap: "data/alignment/palenocka-live_tempomap.json",
+    scoreBeats: "data/alignment/palenocka-live_score_beats.json",
+  },
   palenocka: {
     label: "Palenocka",
     audio: "data/audio/palenocka.wav",
     score: "data/score/palenocka.musicxml",
     tempomap: "data/alignment/palenocka_tempomap.json",
     scoreBeats: "data/alignment/palenocka_score_beats.json",
+  },
+  nebudem_dobry: {
+    label: "Nebudem Dobry Nebudem",
+    audio: "data/audio/nebudem-dobry.wav",
+    score: "data/score/nebudem-dobry.musicxml",
+    tempomap: "data/alignment/nebudem-dobry_tempomap.json",
+    scoreBeats: "data/alignment/nebudem-dobry_score_beats.json",
   },
 };
 
@@ -101,11 +116,37 @@ function setTimes(audioTime = 0, scoreTime = 0) {
   if (dom.scoreTime) dom.scoreTime.textContent = scoreTime.toFixed(2);
 }
 
+function updateTopbarOffset() {
+  if (!dom.topbar) {
+    return;
+  }
+
+  const topbarHeight = Math.ceil(dom.topbar.getBoundingClientRect().height);
+  document.documentElement.style.setProperty(
+    "--topbar-height",
+    `${topbarHeight}px`,
+  );
+}
+
+function setupFloatingTopbar() {
+  updateTopbarOffset();
+  window.addEventListener("resize", updateTopbarOffset);
+  window.addEventListener("load", updateTopbarOffset);
+
+  if ("ResizeObserver" in window && dom.topbar) {
+    new ResizeObserver(updateTopbarOffset).observe(dom.topbar);
+  }
+}
+
 function resetAlignmentState() {
   state.tempomap = [];
   state.cursorSteps = [];
   state.lastCursorIndex = -1;
   setTimes();
+
+  if (dom.score) {
+    dom.score.scrollLeft = 0;
+  }
 }
 
 async function fetchJson(path) {
@@ -328,21 +369,34 @@ function moveCursorTo(index) {
   }
 }
 
+function prepareScoreContainer() {
+  if (!dom.score) {
+    return;
+  }
+
+  dom.score.scrollLeft = 0;
+}
+
 async function ensureOsmd() {
   if (state.osmd) {
     return state.osmd;
   }
 
   state.osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(dom.score, {
-    autoResize: true,
+    autoResize: false,
     drawTitle: true,
     followCursor: false,
+    pageFormat: "Endless",
+    renderSingleHorizontalStaffline: true,
+    drawingParameters: "compacttight",
   });
 
   return state.osmd;
 }
 
 async function renderScore(scorePath) {
+  prepareScoreContainer();
+
   const osmd = await ensureOsmd();
   await osmd.load(scorePath);
   osmd.render();
@@ -470,6 +524,7 @@ function attachEvents() {
 }
 
 function init() {
+  setupFloatingTopbar();
   setupAudioControls();
   populateSongSelect();
   setSongLabel();

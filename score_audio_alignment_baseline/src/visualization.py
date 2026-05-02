@@ -5,14 +5,23 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from src.feature_utils import normalize_rows
 
 CHROMA_LABELS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 
-def _normalize_rows(x: np.ndarray) -> np.ndarray:
-    norms = np.linalg.norm(x, axis=1, keepdims=True)
-    norms[norms == 0.0] = 1.0
-    return x / norms
+def _validate_chroma(chroma: np.ndarray) -> None:
+    if chroma.ndim != 2:
+        raise ValueError("chroma must be a 2D array")
+    if chroma.shape[1] != 12:
+        raise ValueError("chroma must have 12 pitch-class columns")
+
+
+def _validate_times(times: np.ndarray, expected_length: int) -> None:
+    if times.ndim != 1:
+        raise ValueError("times must be a 1D array")
+    if len(times) != expected_length:
+        raise ValueError("times length must match the number of frames")
 
 
 def _finish_figure(fig: plt.Figure, save_path: str | Path | None, show: bool) -> None:
@@ -45,9 +54,13 @@ def plot_chroma(
     save_path: str | Path | None = None,
     show: bool = True,
 ) -> None:
+    _validate_chroma(chroma)
+
+    if times is not None:
+        _validate_times(times, chroma.shape[0])
     fig, ax = plt.subplots(figsize=(10, 4))
 
-    if times is not None and len(times) == chroma.shape[0]:
+    if times is not None:
         extent = [float(times[0]), float(times[-1]), -0.5, 11.5]
         image = ax.imshow(
             chroma.T,
@@ -75,6 +88,10 @@ def warp_score_chroma_to_audio_time(
     path: np.ndarray,
     n_audio_frames: int,
 ) -> np.ndarray:
+    _validate_chroma(score_chroma)
+
+    if n_audio_frames <= 0:
+        raise ValueError("n_audio_frames must be greater than 0")
     if len(path) == 0:
         raise ValueError("path must not be empty")
 
@@ -104,7 +121,7 @@ def warp_score_chroma_to_audio_time(
             frame_indices, valid, warped[valid, pitch_class]
         )
 
-    return _normalize_rows(warped)
+    return normalize_rows(warped)
 
 
 def plot_aligned_chromas(
@@ -115,6 +132,12 @@ def plot_aligned_chromas(
     show: bool = True,
     title_prefix: str = "",
 ) -> None:
+    _validate_chroma(score_chroma_on_audio_time)
+    _validate_chroma(audio_chroma)
+    _validate_times(audio_times, audio_chroma.shape[0])
+
+    if score_chroma_on_audio_time.shape[0] != audio_chroma.shape[0]:
+        raise ValueError("score and audio chroma must have the same number of frames")
     fig, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True, sharey=True)
     extent = [float(audio_times[0]), float(audio_times[-1]), -0.5, 11.5]
 
@@ -153,6 +176,10 @@ def plot_cost_matrix_with_path(
     show: bool = True,
     title: str = "Cost matrix with DTW path",
 ) -> None:
+    if cost.ndim != 2:
+        raise ValueError("cost must be a 2D array")
+    if path.ndim != 2 or path.shape[1] != 2:
+        raise ValueError("path must have shape (n_points, 2)")
     fig, ax = plt.subplots(figsize=(8, 6))
     image = ax.imshow(cost.T, origin="lower", aspect="auto", interpolation="nearest")
     _plot_path_overlay(ax, path)
@@ -170,6 +197,8 @@ def plot_tempomap(
     show: bool = True,
     title: str = "Tempomap",
 ) -> None:
+    if tempomap.ndim != 2 or tempomap.shape[1] != 2:
+        raise ValueError("tempomap must have shape (n_points, 2)")
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(tempomap[:, 0], tempomap[:, 1], linewidth=1.8)
     ax.set_xlabel("Score beat")
@@ -187,6 +216,10 @@ def plot_tempomap_comparison(
     show: bool = True,
     title: str = "Raw vs. smoothed tempomap",
 ) -> None:
+    if tempomap_raw.ndim != 2 or tempomap_raw.shape[1] != 2:
+        raise ValueError("tempomap_raw must have shape (n_points, 2)")
+    if tempomap_smooth.ndim != 2 or tempomap_smooth.shape[1] != 2:
+        raise ValueError("tempomap_smooth must have shape (n_points, 2)")
     fig, ax = plt.subplots(figsize=(9, 5))
     ax.plot(
         tempomap_raw[:, 0],
@@ -206,34 +239,6 @@ def plot_tempomap_comparison(
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
     ax.legend()
-    fig.tight_layout()
-    _finish_figure(fig, save_path, show)
-
-
-def plot_paths_side_by_side(
-    cost: np.ndarray,
-    forward_path: np.ndarray,
-    reverse_path: np.ndarray,
-    save_path: str | Path | None = None,
-    show: bool = True,
-) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
-    image = None
-
-    for ax, (title, path) in zip(
-        axes, [("Forward", forward_path), ("Reverse", reverse_path)]
-    ):
-        image = ax.imshow(
-            cost.T, origin="lower", aspect="auto", interpolation="nearest"
-        )
-        _plot_path_overlay(ax, path)
-        ax.set_title(title)
-        ax.set_xlabel("Score frame")
-
-    axes[0].set_ylabel("Audio frame")
-    if image is not None:
-        fig.colorbar(image, ax=axes, shrink=0.85)
-
     fig.tight_layout()
     _finish_figure(fig, save_path, show)
 

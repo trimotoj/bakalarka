@@ -1,0 +1,36 @@
+{
+  "songs": {
+    "aka-si-mi-krasna": {
+      "score": "data/score/aka-si-mi-krasna.musicxml",
+      "audio": "data/audio/aka-si-mi-krasna.wav"
+    },
+    "aka-si-mi-krasna-transposed": {
+      "score": "data/score/aka-si-mi-krasna.musicxml",
+      "audio": "data/audio/aka-si-mi-krasna_transposed.wav"
+    },
+    "chopin": {
+      "score": "data/score/chopin.musicxml",
+      "audio": "data/audio/chopin.wav"
+    },
+    "misatango-gloria": {
+      "score": "data/score/misatango-gloria.musicxml",
+      "audio": "data/audio/misatango-gloria.wav"
+    },
+    "misatango-kyrie": {
+      "score": "data/score/misatango-kyrie.musicxml",
+      "audio": "data/audio/misatango-kyrie.wav"
+    },
+    "nebudem-dobry": {
+      "score": "data/score/nebudem-dobry.musicxml",
+      "audio": "data/audio/nebudem-dobry.wav"
+    },
+    "palenocka": {
+      "score": "data/score/palenocka.musicxml",
+      "audio": "data/audio/palenocka.wav"
+    },
+    "palenocka-live": {
+      "score": "data/score/palenocka.musicxml",
+      "audio": "data/audio/palenocka_live.wav"
+    }
+  }
+}

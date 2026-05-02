@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import csv
+import argparse
 from pathlib import Path
 
 import numpy as np
+
+from src.config import DEFAULT_SONGS_CONFIG, load_song_config
 
 from src.audio_features import (
     audio_to_chroma,
@@ -15,6 +17,9 @@ from src.dtw_alignment import dtw
 from src.io_utils import (
     load_audio,
     load_score,
+    save_json,
+    save_note_array_csv,
+    save_path_csv,
     save_score_beats_json,
 )
 from src.score_features import (
@@ -23,26 +28,21 @@ from src.score_features import (
     score_to_note_array,
 )
 from src.tempomap import (
-    export_path_csv,
-    export_tempomap_json,
     make_tempomap,
     remove_duplicate_points,
     smooth_tempomap,
+    tempomap_to_json_data,
 )
 from src.visualization import (
     plot_aligned_chromas,
     plot_chroma,
     plot_cost_matrix_with_path,
-    plot_local_cost_matrix_with_path,
     plot_tempomap,
     plot_tempomap_comparison,
     warp_score_chroma_to_audio_time,
 )
 
-
-SCORE_PATH = Path("data/score/aka-si-mi-krasna.musicxml")
-AUDIO_PATH = Path("data/audio/aka-si-mi-krasna_transposed.wav")
-OUTPUT_DIR = Path("data/output")
+DEFAULT_OUTPUT_DIR = Path("output")
 
 AUDIO_SR = 22050
 AUDIO_HOP_LENGTH = 512
@@ -55,8 +55,8 @@ def get_piece_name(score_path: Path, audio_path: Path) -> str:
     return audio_path.stem or score_path.stem
 
 
-def build_output_paths(piece_name: str) -> dict[str, Path]:
-    piece_dir = OUTPUT_DIR / piece_name
+def build_output_paths(piece_name: str, output_dir: Path) -> dict[str, Path]:
+    piece_dir = output_dir / piece_name
     exports_dir = piece_dir / "exports"
     plots_dir = piece_dir / "plots"
     analysis_dir = piece_dir / "analysis"
@@ -77,7 +77,6 @@ def build_output_paths(piece_name: str) -> dict[str, Path]:
         "tempomap_raw_plot": plots_dir / "tempomap_raw.png",
         "tempomap_comparison_plot": plots_dir / "tempomap_raw_vs_smooth.png",
         "aligned_plot": plots_dir / "aligned_chromas.png",
-        "local_cost_plot": plots_dir / "local_cost_beat2.png",
     }
 
 
@@ -86,33 +85,16 @@ def ensure_output_dirs(output_paths: dict[str, Path]) -> None:
         output_paths[key].mkdir(parents=True, exist_ok=True)
 
 
-def build_tempomap(path: np.ndarray, score_times: np.ndarray, audio_times: np.ndarray):
+def build_tempomap(
+    path: np.ndarray,
+    score_times: np.ndarray,
+    audio_times: np.ndarray,
+    smooth_window: int,
+) -> tuple[np.ndarray, np.ndarray]:
     tempomap_raw = make_tempomap(path, score_times, audio_times)
     tempomap_raw = remove_duplicate_points(tempomap_raw)
-    tempomap_smooth = smooth_tempomap(tempomap_raw, window=SMOOTH_WINDOW)
+    tempomap_smooth = smooth_tempomap(tempomap_raw, window=smooth_window)
     return tempomap_raw, tempomap_smooth
-
-
-def save_note_array_csv(note_array: np.ndarray, csv_path: Path) -> None:
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if note_array.dtype.names is None:
-        raise ValueError("Expected a structured note array with named fields.")
-
-    fieldnames = list(note_array.dtype.names)
-
-    with csv_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(fieldnames)
-
-        for row in note_array:
-            values = []
-            for name in fieldnames:
-                value = row[name]
-                if isinstance(value, np.generic):
-                    value = value.item()
-                values.append(value)
-            writer.writerow(values)
 
 
 def save_notebook_analysis_bundle(
@@ -144,20 +126,101 @@ def save_notebook_analysis_bundle(
     np.save(analysis_dir / "tempomap_raw.npy", np.asarray(tempomap_raw))
     np.save(analysis_dir / "tempomap_smooth.npy", np.asarray(tempomap_smooth))
 
-    save_note_array_csv(note_array, analysis_dir / "score_notes.csv")
+    save_note_array_csv(analysis_dir / "score_notes.csv", note_array)
 
 
-def main() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+def resolve_inputs_from_args(args: argparse.Namespace) -> tuple[str, Path, Path]:
+    if args.song is not None:
+        songs = load_song_config(args.config)
 
-    piece_name = get_piece_name(SCORE_PATH, AUDIO_PATH)
-    output_paths = build_output_paths(piece_name)
+        if args.song not in songs:
+            available = ", ".join(sorted(songs.keys()))
+            raise KeyError(
+                f"Song '{args.song}' is not defined in {args.config}. "
+                f"Available songs: {available}"
+            )
+
+        song = songs[args.song]
+        return args.song, Path(song["score"]), Path(song["audio"])
+
+    if args.score is None or args.audio is None:
+        raise ValueError("Use either --song or both --score and --audio.")
+
+    piece_name = args.piece_name or get_piece_name(args.score, args.audio)
+    return piece_name, args.score, args.audio
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Compute score-audio alignment and export tempomap."
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Process all songs from the songs config.",
+    )
+    parser.add_argument(
+        "--song",
+        type=str,
+        default=None,
+        help="Song ID from config/songs.json.",
+    )
+
+    parser.add_argument(
+        "--score",
+        type=Path,
+        default=None,
+        help="Path to MusicXML score file.",
+    )
+    parser.add_argument(
+        "--audio",
+        type=Path,
+        default=None,
+        help="Path to audio file.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Output directory.",
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_SONGS_CONFIG,
+        help="Path to songs config JSON file.",
+    )
+    parser.add_argument(
+        "--piece-name",
+        type=str,
+        default=None,
+        help="Optional name of the output folder. If omitted, audio file stem is used.",
+    )
+    parser.add_argument(
+        "--show-plots",
+        action="store_true",
+        help="Show plots during execution.",
+    )
+
+    return parser.parse_args()
+
+
+def run_alignment(
+    piece_name: str,
+    score_path: Path,
+    audio_path: Path,
+    output_dir: Path,
+    show_plots: bool,
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_paths = build_output_paths(piece_name, output_dir)
     ensure_output_dirs(output_paths)
 
-    score = load_score(SCORE_PATH)
+    score = load_score(score_path)
     note_array = score_to_note_array(score)
 
-    audio_full, sr = load_audio(AUDIO_PATH, sr=AUDIO_SR)
+    audio_full, sr = load_audio(audio_path, sr=AUDIO_SR)
     audio_trimmed, start_sample = trim_leading_silence(audio_full, top_db=30)
     start_time = start_sample / sr
 
@@ -171,7 +234,14 @@ def main() -> None:
 
     cost = cosine_cost_matrix(score_chroma, audio_chroma)
     path = dtw(cost)
-    tempomap_raw, tempomap_smooth = build_tempomap(path, score_times, audio_times)
+
+    tempomap_raw, tempomap_smooth = build_tempomap(
+        path,
+        score_times,
+        audio_times,
+        smooth_window=SMOOTH_WINDOW,
+    )
+
     warped_score_chroma = warp_score_chroma_to_audio_time(
         score_chroma,
         path,
@@ -179,9 +249,11 @@ def main() -> None:
     )
 
     save_score_beats_json(output_paths["score_beats_json"], note_array)
-    export_path_csv(path, output_paths["path_csv"])
-    export_tempomap_json(tempomap_raw, output_paths["tempomap_raw_json"])
-    export_tempomap_json(tempomap_smooth, output_paths["tempomap_smooth_json"])
+    save_path_csv(output_paths["path_csv"], path)
+    save_json(output_paths["tempomap_raw_json"], tempomap_to_json_data(tempomap_raw))
+    save_json(
+        output_paths["tempomap_smooth_json"], tempomap_to_json_data(tempomap_smooth)
+    )
 
     plot_chroma(
         score_chroma,
@@ -189,7 +261,7 @@ def main() -> None:
         title="Score chroma",
         x_label="Score time [beats]",
         save_path=output_paths["score_chroma_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
     )
     plot_chroma(
         audio_chroma,
@@ -197,32 +269,32 @@ def main() -> None:
         title="Audio chroma",
         x_label="Audio time [s]",
         save_path=output_paths["audio_chroma_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
     )
     plot_cost_matrix_with_path(
         cost,
         path,
         save_path=output_paths["cost_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
         title="Cost matrix with DTW path",
     )
     plot_tempomap(
         tempomap_raw,
         save_path=output_paths["tempomap_raw_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
         title="Raw tempomap",
     )
     plot_tempomap(
         tempomap_smooth,
         save_path=output_paths["tempomap_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
         title="Smoothed tempomap",
     )
     plot_tempomap_comparison(
         tempomap_raw,
         tempomap_smooth,
         save_path=output_paths["tempomap_comparison_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
         title="Raw vs. smoothed tempomap",
     )
     plot_aligned_chromas(
@@ -230,21 +302,8 @@ def main() -> None:
         audio_chroma,
         audio_times,
         save_path=output_paths["aligned_plot"],
-        show=SHOW_PLOTS,
+        show=show_plots,
         title_prefix="",
-    )
-    plot_local_cost_matrix_with_path(
-        cost=cost,
-        path=path,
-        score_times=score_times,
-        audio_times=audio_times,
-        score_min=1.5,
-        score_max=2.5,
-        audio_min=2.0,
-        audio_max=3.5,
-        save_path=output_paths["local_cost_plot"],
-        show=SHOW_PLOTS,
-        title="Local cost matrix around score beat 2.0",
     )
 
     save_notebook_analysis_bundle(
@@ -272,23 +331,40 @@ def main() -> None:
     print(f"path shape: {path.shape}")
     print(f"raw tempomap shape: {tempomap_raw.shape}")
     print(f"smooth tempomap shape: {tempomap_smooth.shape}")
-    print(f"score beats json: {output_paths['score_beats_json']}")
-    print(f"path csv: {output_paths['path_csv']}")
-    print(f"raw tempomap plot: {output_paths['tempomap_raw_plot']}")
-    print(f"smooth tempomap plot: {output_paths['tempomap_plot']}")
-    print(f"raw vs smooth tempomap plot: {output_paths['tempomap_comparison_plot']}")
-    print(f"raw tempomap json: {output_paths['tempomap_raw_json']}")
-    print(f"smooth tempomap json: {output_paths['tempomap_smooth_json']}")
-    print("analysis bundle files:")
-    print(f"  - {output_paths['analysis_dir'] / 'audio_times.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'audio_chroma.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'score_times.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'score_chroma.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'score_chroma_on_audio_time.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'path_frames.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'tempomap_raw.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'tempomap_smooth.npy'}")
-    print(f"  - {output_paths['analysis_dir'] / 'score_notes.csv'}")
+
+
+def main() -> None:
+    args = parse_args()
+
+    output_dir = args.output
+    show_plots = args.show_plots or SHOW_PLOTS
+
+    if args.all:
+        songs = load_song_config(args.config)
+
+        for piece_name, song in songs.items():
+            print()
+            print(f"=== Processing {piece_name} ===")
+
+            run_alignment(
+                piece_name=piece_name,
+                score_path=Path(song["score"]),
+                audio_path=Path(song["audio"]),
+                output_dir=output_dir,
+                show_plots=show_plots,
+            )
+
+        return
+
+    piece_name, score_path, audio_path = resolve_inputs_from_args(args)
+
+    run_alignment(
+        piece_name=piece_name,
+        score_path=score_path,
+        audio_path=audio_path,
+        output_dir=output_dir,
+        show_plots=show_plots,
+    )
 
 
 if __name__ == "__main__":

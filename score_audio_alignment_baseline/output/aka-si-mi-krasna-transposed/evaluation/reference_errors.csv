@@ -1,0 +1,7 @@
+song,label,score_time,audio_time_ref,audio_time_pred,error_seconds,absolute_error_seconds,valid,note
+aka-si-mi-krasna-transposed,takt_01,0.0,0.726,0.8952582514487275,0.16925825144872753,0.16925825144872753,True,začiatok taktu 1
+aka-si-mi-krasna-transposed,takt_10,18.0,27.846,27.910385487528345,0.0643854875283445,0.0643854875283445,True,začiatok taktu 10
+aka-si-mi-krasna-transposed,takt_19,36.0,52.2,51.803718820861675,-0.3962811791383274,0.3962811791383274,True,začiatok taktu 19
+aka-si-mi-krasna-transposed,takt_23,44.0,63.447,64.28444444444443,0.8374444444444293,0.8374444444444293,True,začiatok taktu 23
+aka-si-mi-krasna-transposed,takt_32,62.0,94.15,93.71573696145123,-0.434263038548778,0.434263038548778,True,začiatok taktu 32
+aka-si-mi-krasna-transposed,takt_36,70.0,105.624,109.45886621315191,3.834866213151912,3.834866213151912,True,začiatok taktu 36

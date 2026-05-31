@@ -1,0 +1,44 @@
+{
+  "song": "palenocka",
+  "tempomap_kind": "smooth",
+  "summary": {
+    "num_points_total": 10,
+    "num_points_valid": 10,
+    "mae_seconds": 0.43114043839759264,
+    "median_absolute_error_seconds": 0.365902494331074,
+    "max_absolute_error_seconds": 1.2049024943310798,
+    "mean_signed_error_seconds": -0.3731384731670559,
+    "std_signed_error_seconds": 0.39785619128435157,
+    "alignment_rate_at_0_25s": 0.3,
+    "alignment_rate_at_0_5s": 0.8,
+    "alignment_rate_at_1_0s": 0.9,
+    "alignment_rate_at_2_0s": 1.0
+  },
+  "tempomap_diagnostics": {
+    "tempomap_points": 10656,
+    "grouped_tempomap_points": 10381,
+    "score_time_min": 0.0,
+    "score_time_max": 259.5,
+    "audio_time_min": 0.8384983623078861,
+    "audio_time_max": 130.4006853111615,
+    "duplicate_score_times": 275,
+    "duplicate_audio_times": 3253,
+    "flat_steps_20ms": 6450,
+    "backwards_steps_20ms": 0,
+    "max_flat_run_20ms": 361,
+    "local_tempo_bpm_min": 1.538085937499472,
+    "local_tempo_bpm_median": 72.67456054683521,
+    "local_tempo_bpm_max": 581.3964843776048
+  },
+  "path_diagnostics": {
+    "path_available": true,
+    "path_length": 10656,
+    "horizontal_steps": 5073,
+    "vertical_steps": 275,
+    "diagonal_steps": 5307,
+    "horizontal_step_ratio": 0.47611450023463164,
+    "vertical_step_ratio": 0.025809479117785077,
+    "max_horizontal_run": 318,
+    "max_vertical_run": 82
+  }
+}

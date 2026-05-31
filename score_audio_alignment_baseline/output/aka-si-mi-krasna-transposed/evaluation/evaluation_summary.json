@@ -1,0 +1,44 @@
+{
+  "song": "aka-si-mi-krasna-transposed",
+  "tempomap_kind": "smooth",
+  "summary": {
+    "num_points_total": 6,
+    "num_points_valid": 6,
+    "mae_seconds": 0.9560831023767532,
+    "median_absolute_error_seconds": 0.4152721088435527,
+    "max_absolute_error_seconds": 3.834866213151912,
+    "mean_signed_error_seconds": 0.6792350298143847,
+    "std_signed_error_seconds": 1.4729657001109395,
+    "alignment_rate_at_0_25s": 0.3333333333333333,
+    "alignment_rate_at_0_5s": 0.6666666666666666,
+    "alignment_rate_at_1_0s": 0.8333333333333334,
+    "alignment_rate_at_2_0s": 0.8333333333333334
+  },
+  "tempomap_diagnostics": {
+    "tempomap_points": 6040,
+    "grouped_tempomap_points": 3481,
+    "score_time_min": 0.0,
+    "score_time_max": 87.0,
+    "audio_time_min": 0.8952582514487275,
+    "audio_time_max": 138.01683043587803,
+    "duplicate_score_times": 2559,
+    "duplicate_audio_times": 104,
+    "flat_steps_20ms": 149,
+    "backwards_steps_20ms": 0,
+    "max_flat_run_20ms": 70,
+    "local_tempo_bpm_min": 0.37340814667617434,
+    "local_tempo_bpm_median": 64.59960937499994,
+    "local_tempo_bpm_max": 581.3964843769439
+  },
+  "path_diagnostics": {
+    "path_available": true,
+    "path_length": 6040,
+    "horizontal_steps": 129,
+    "vertical_steps": 2559,
+    "diagonal_steps": 3351,
+    "horizontal_step_ratio": 0.02136115250869349,
+    "vertical_step_ratio": 0.42374565325385,
+    "max_horizontal_run": 64,
+    "max_vertical_run": 344
+  }
+}

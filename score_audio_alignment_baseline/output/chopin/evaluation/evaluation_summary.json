@@ -1,0 +1,44 @@
+{
+  "song": "chopin",
+  "tempomap_kind": "smooth",
+  "summary": {
+    "num_points_total": 10,
+    "num_points_valid": 10,
+    "mae_seconds": 0.10467551020416477,
+    "median_absolute_error_seconds": 0.07772902494347989,
+    "max_absolute_error_seconds": 0.24885563114126796,
+    "mean_signed_error_seconds": -0.01089637188221002,
+    "std_signed_error_seconds": 0.12405937014281225,
+    "alignment_rate_at_0_25s": 1.0,
+    "alignment_rate_at_0_5s": 1.0,
+    "alignment_rate_at_1_0s": 1.0,
+    "alignment_rate_at_2_0s": 1.0
+  },
+  "tempomap_diagnostics": {
+    "tempomap_points": 9947,
+    "grouped_tempomap_points": 9601,
+    "score_time_min": -1.0,
+    "score_time_max": 239.00000000000023,
+    "audio_time_min": 0.5366389518770471,
+    "audio_time_max": 150.32340639959688,
+    "duplicate_score_times": 346,
+    "duplicate_audio_times": 1542,
+    "flat_steps_20ms": 5021,
+    "backwards_steps_20ms": 0,
+    "max_flat_run_20ms": 56,
+    "local_tempo_bpm_min": 2.2275727370694556,
+    "local_tempo_bpm_median": 64.59960937505784,
+    "local_tempo_bpm_max": 581.3964843769439
+  },
+  "path_diagnostics": {
+    "path_available": true,
+    "path_length": 9947,
+    "horizontal_steps": 3493,
+    "vertical_steps": 346,
+    "diagonal_steps": 6107,
+    "horizontal_step_ratio": 0.3511964608887995,
+    "vertical_step_ratio": 0.03478785441383471,
+    "max_horizontal_run": 44,
+    "max_vertical_run": 56
+  }
+}

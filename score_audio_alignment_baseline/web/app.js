@@ -23,42 +23,42 @@ const SONGS = {
     scoreBeats: "data/alignment/aka-si-mi-krasna_score_beats.json",
   },
   chopin: {
-    label: "Chopin",
+    label: "Waltz in A Minor",
     audio: "data/audio/chopin.wav",
     score: "data/score/chopin.musicxml",
     tempomap: "data/alignment/chopin_tempomap.json",
     scoreBeats: "data/alignment/chopin_score_beats.json",
   },
   misatango_kyrie: {
-    label: "Kyrie",
+    label: "Misa Tango – Kyrie",
     audio: "data/audio/misatango-kyrie.wav",
     score: "data/score/misatango-kyrie.musicxml",
     tempomap: "data/alignment/misatango-kyrie_tempomap.json",
     scoreBeats: "data/alignment/misatango-kyrie_score_beats.json",
   },
   misatango_gloria: {
-    label: "Gloria",
+    label: "Misa Tango – Gloria",
     audio: "data/audio/misatango-gloria.wav",
     score: "data/score/misatango-gloria.musicxml",
     tempomap: "data/alignment/misatango-gloria_tempomap.json",
     scoreBeats: "data/alignment/misatango-gloria_score_beats.json",
   },
   palenocka_live: {
-    label: "Palenocka-live",
+    label: "Pálenôčka – živá nahrávka",
     audio: "data/audio/palenocka_live.wav",
     score: "data/score/palenocka.musicxml",
     tempomap: "data/alignment/palenocka-live_tempomap.json",
     scoreBeats: "data/alignment/palenocka-live_score_beats.json",
   },
   palenocka: {
-    label: "Palenocka",
+    label: "Pálenôčka",
     audio: "data/audio/palenocka.wav",
     score: "data/score/palenocka.musicxml",
     tempomap: "data/alignment/palenocka_tempomap.json",
     scoreBeats: "data/alignment/palenocka_score_beats.json",
   },
   nebudem_dobry: {
-    label: "Nebudem Dobry Nebudem",
+    label: "Nebudem dobrý, nebudem",
     audio: "data/audio/nebudem-dobry.wav",
     score: "data/score/nebudem-dobry.musicxml",
     tempomap: "data/alignment/nebudem-dobry_tempomap.json",
@@ -112,8 +112,12 @@ function setSongLabel() {
 }
 
 function setTimes(audioTime = 0, scoreTime = 0) {
-  if (dom.audioTime) dom.audioTime.textContent = audioTime.toFixed(2);
-  if (dom.scoreTime) dom.scoreTime.textContent = scoreTime.toFixed(2);
+  if (dom.audioTime) {
+    dom.audioTime.textContent = audioTime.toFixed(2);
+  }
+  if (dom.scoreTime) {
+    dom.scoreTime.textContent = scoreTime.toFixed(2);
+  }
 }
 
 function updateTopbarOffset() {
@@ -324,33 +328,39 @@ function buildCursorSteps(scoreStart = 0) {
 
   state.osmd.cursor.reset();
 
-  const rawTimes = [];
+  const rawSteps = [];
   let previousTime = null;
-  let stepCount = 0;
+  let cursorIndex = 0;
 
-  while (!state.osmd.cursor.Iterator.EndReached && stepCount < MAX_CURSOR_STEPS) {
+  while (
+    !state.osmd.cursor.Iterator.EndReached &&
+    cursorIndex < MAX_CURSOR_STEPS
+  ) {
     const time = getCursorTimestamp();
 
-    if (time !== null && (previousTime === null || time > previousTime)) {
-      rawTimes.push(time);
+    if (time !== null && (previousTime === null || time > previousTime + EPS)) {
+      rawSteps.push({
+        cursorIndex,
+        rawTime: time,
+      });
       previousTime = time;
     }
 
     state.osmd.cursor.next();
-    stepCount += 1;
+    cursorIndex += 1;
   }
 
   state.osmd.cursor.reset();
 
-  if (rawTimes.length === 0) {
+  if (rawSteps.length === 0) {
     return;
   }
 
-  const offset = scoreStart - rawTimes[0] * SCORE_SCALE;
+  const offset = scoreStart - rawSteps[0].rawTime * SCORE_SCALE;
 
-  state.cursorSteps = rawTimes.map((time, index) => ({
-    index,
-    scoreTime: time * SCORE_SCALE + offset,
+  state.cursorSteps = rawSteps.map((step) => ({
+    cursorIndex: step.cursorIndex,
+    scoreTime: step.rawTime * SCORE_SCALE + offset,
   }));
 }
 
@@ -418,13 +428,15 @@ function syncUi() {
     return;
   }
 
-  const cursorIndex = findNearestIndex(
+  const cursorStepIndex = findNearestIndex(
     state.cursorSteps,
     scoreTime,
     (step) => step.scoreTime,
   );
 
-  moveCursorTo(cursorIndex);
+  if (cursorStepIndex >= 0) {
+    moveCursorTo(state.cursorSteps[cursorStepIndex].cursorIndex);
+  }
 }
 
 function startSyncLoop() {
@@ -489,7 +501,10 @@ async function loadSelectedSong() {
     startSyncLoop();
   } catch (error) {
     console.error(error);
-    alert(`Nepodarilo sa načítať skladbu „${song?.label ?? ""}“. Skontroluj konzolu.`);
+    alert(
+      `Nepodarilo sa načítať skladbu „${song?.label ?? ""}“. ` +
+        "Skontroluj konzolu prehliadača.",
+    );
   }
 }
 

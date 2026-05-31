@@ -3,32 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Score Sync Demo</title>
+    <title>Vizualizácia zarovnania notového zápisu so zvukovou nahrávkou</title>
+
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main class="page">
       <div class="topbar">
         <header class="page-header panel">
-          <h1>Synchronizácia partitúry s nahrávkou</h1>
+          <h1>Vizualizácia zarovnania notového zápisu so zvukovou nahrávkou</h1>
         </header>
 
         <section class="panel controls" aria-label="Ovládanie prehrávania">
           <label for="songSelect" class="controls__label">Skladba:</label>
           <select id="songSelect"></select>
-          <button id="loadBtn" type="button">Načítať vybranú skladbu</button>
-          <button id="playBtn" type="button">Play</button>
-          <button id="pauseBtn" type="button">Pause</button>
-          <button id="stopBtn" type="button">Stop</button>
+          <button id="loadBtn" type="button">Načítať skladbu</button>
+          <button id="playBtn" type="button">Prehrať</button>
+          <button id="pauseBtn" type="button">Pozastaviť</button>
+          <button id="stopBtn" type="button">Zastaviť</button>
         </section>
 
         <section class="panel status" aria-label="Stav synchronizácie">
           <p>
             <strong>Aktuálna skladba:</strong> <span id="currentSong">-</span>
           </p>
-          <p><strong>Audio time:</strong> <span id="audioTime">0.00</span> s</p>
           <p>
-            <strong>Score time:</strong> <span id="scoreTime">0.00</span> beats
+            <strong>Čas zvukovej nahrávky:</strong>
+            <span id="audioTime">0.00</span> s
+          </p>
+          <p>
+            <strong>Čas notového zápisu:</strong>
+            <span id="scoreTime">0.00</span> doby
           </p>
         </section>
 
